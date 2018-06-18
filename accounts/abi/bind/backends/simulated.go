@@ -34,6 +34,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/state"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
+	"github.com/ethereum/go-ethereum/eth"
 	"github.com/ethereum/go-ethereum/eth/filters"
 	"github.com/ethereum/go-ethereum/ethdb"
 	"github.com/ethereum/go-ethereum/event"
@@ -78,6 +79,17 @@ func NewSimulatedBackend(alloc core.GenesisAlloc) *SimulatedBackend {
 	}
 	backend.rollback()
 	return backend
+}
+
+func NewTomoBackend(s *eth.Ethereum) *SimulatedBackend {
+	db := s.GetChainDB()
+	bc := s.GetBlockChain()
+	return &SimulatedBackend{
+		database:   db,
+		blockchain: bc,
+		config:     s.GetChainConfig(),
+		events:     filters.NewEventSystem(new(event.TypeMux), &filterBackend{db, bc}, false),
+	}
 }
 
 // Commit imports all the pending transactions as a single block and starts a

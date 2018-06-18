@@ -99,6 +99,10 @@ type Ethereum struct {
 	lock sync.RWMutex // Protects the variadic fields (e.g. gas price and etherbase)
 }
 
+func (s *Ethereum) GetChainDB() ethdb.Database          { return s.chainDb }
+func (s *Ethereum) GetBlockChain() *core.BlockChain     { return s.blockchain }
+func (s *Ethereum) GetChainConfig() *params.ChainConfig { return s.chainConfig }
+
 func (s *Ethereum) AddLesServer(ls LesServer) {
 	s.lesServer = ls
 	ls.SetBloomBitsIndexer(s.bloomIndexer)

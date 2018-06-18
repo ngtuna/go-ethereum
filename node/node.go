@@ -121,6 +121,8 @@ func New(conf *Config) (*Node, error) {
 	}, nil
 }
 
+func (n *Node) GetConfig() *Config { return n.config }
+
 // Register injects a new service into the node's stack. The service created by
 // the passed constructor must be unique in its type with regard to sibling ones.
 func (n *Node) Register(constructor ServiceConstructor) error {

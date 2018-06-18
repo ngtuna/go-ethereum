@@ -26,9 +26,13 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind/backends"
 	"github.com/ethereum/go-ethereum/accounts/keystore"
 	"github.com/ethereum/go-ethereum/cmd/utils"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/console"
+	"github.com/ethereum/go-ethereum/contracts/validator"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/eth"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -40,7 +44,8 @@ import (
 )
 
 const (
-	clientIdentifier = "tomo" // Client identifier to advertise over the network
+	clientIdentifier    = "tomo" // Client identifier to advertise over the network
+	validatorSmcAddress = "0x0000000000000000000000000000000000000088"
 )
 
 var (
@@ -288,6 +293,25 @@ func startNode(ctx *cli.Context, stack *node.Node) {
 		if err := stack.Service(&ethereum); err != nil {
 			utils.Fatalf("Ethereum service not running: %v", err)
 		}
+
+		//get key
+		nodeConfig := stack.GetConfig()
+		key := nodeConfig.NodeKey()
+		transactOpts := bind.NewKeyedTransactor(key)
+
+		//create backend
+		be := backends.NewTomoBackend(ethereum)
+
+		//new validator
+		v, err := validator.NewValidator(transactOpts, common.StringToAddress(validatorSmcAddress), be)
+		cs, err := v.GetCandidates()
+		if err != nil {
+			utils.Fatalf("Stop now. Can't get candidates: %v", err)
+		}
+		log.Info("Here is list of", "candidates", cs)
+		return
+		// exit try
+
 		go func() {
 			started := false
 			ok, err := ethereum.ValidateMiner()
