@@ -1325,11 +1325,10 @@ func (d *Downloader) processFullSyncContent() error {
 		}
 		if d.blockchain.Config() != nil && d.blockchain.Config().Posv != nil {
 			epoch := d.blockchain.Config().Posv.Epoch
-			gap := d.blockchain.Config().Posv.Gap
 			inserts := []*fetchResult{}
 			for i := 0; i < len(results); i++ {
 				number := results[i].Header.Number.Uint64() % epoch
-				if number == 0 || number == epoch-1 || number == epoch-gap {
+				if number == 0 || number == epoch-1 {
 					inserts = append(inserts, results[i])
 					if d.chainInsertHook != nil {
 						d.chainInsertHook(inserts)

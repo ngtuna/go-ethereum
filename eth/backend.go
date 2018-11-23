@@ -28,6 +28,7 @@ import (
 
 	"bytes"
 	"github.com/ethereum/go-ethereum/accounts"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/consensus"
@@ -35,6 +36,7 @@ import (
 	"github.com/ethereum/go-ethereum/consensus/posv"
 	"github.com/ethereum/go-ethereum/contracts"
 	"github.com/ethereum/go-ethereum/contracts/validator/contract"
+	contractValidator "github.com/ethereum/go-ethereum/contracts/validator/contract"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/bloombits"
 	"github.com/ethereum/go-ethereum/core/state"
@@ -53,6 +55,8 @@ import (
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/rpc"
+	"os"
+	"sort"
 )
 
 type LesServer interface {
@@ -355,6 +359,7 @@ func New(ctx *node.ServiceContext, config *Config) (*Ethereum, error) {
 			}
 			return nil
 		}
+
 		eth.txPool.IsMasterNode = func(address common.Address) bool {
 			currentHeader := eth.blockchain.CurrentHeader()
 			snap, err := c.GetSnapshot(eth.blockchain, currentHeader)
@@ -366,6 +371,56 @@ func New(ctx *node.ServiceContext, config *Config) (*Ethereum, error) {
 				return true
 			}
 			return false
+		}
+
+		// Hook update masternodes set at checkpoint block
+		c.HookMasternodes = func() ([]posv.Masternode, error) {
+			log.Info("It's time to update new set of masternodes for the next epoch...")
+			client, err := eth.blockchain.GetClient()
+			if err != nil {
+				return []posv.Masternode{}, err
+			}
+			addr := common.HexToAddress(common.MasternodeVotingSMC)
+			validator, err := contractValidator.NewTomoValidator(addr, client)
+			if err != nil {
+				return []posv.Masternode{}, err
+			}
+			opts := new(bind.CallOpts)
+			candidates, err := validator.GetCandidates(opts)
+			if err != nil {
+				return []posv.Masternode{}, err
+			}
+			ms := []posv.Masternode{}
+			for _, candidate := range candidates {
+				v, err := validator.GetCandidateCap(opts, candidate)
+				if err != nil {
+					return []posv.Masternode{}, err
+				}
+				//TODO: smart contract shouldn't return "0x0000000000000000000000000000000000000000"
+				if candidate.String() != "0x0000000000000000000000000000000000000000" {
+					ms = append(ms, posv.Masternode{Address: candidate, Stake: v})
+				}
+			}
+			if len(ms) == 0 {
+				log.Error("No masternode found. Stopping node")
+				os.Exit(1)
+			} else {
+				sort.Slice(ms, func(i, j int) bool {
+					return ms[i].Stake.Cmp(ms[j].Stake) >= 0
+				})
+				log.Info("Ordered list of masternode candidates")
+				for _, m := range ms {
+					log.Info("", "address", m.Address.String(), "stake", m.Stake)
+				}
+				// update masternodes
+				log.Info("Updating new set of masternodes")
+				if len(ms) > common.MaxMasternodes {
+					return ms[:common.MaxMasternodes], nil
+				} else {
+					return ms, nil
+				}
+			}
+			return []posv.Masternode{}, nil
 		}
 	}
 

@@ -22,18 +22,13 @@ import (
 	"fmt"
 	"io"
 	"math/big"
-	"os"
-	"sort"
 	"sync"
 	"sync/atomic"
 	"time"
 
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/mclock"
 	"github.com/ethereum/go-ethereum/consensus"
-	"github.com/ethereum/go-ethereum/consensus/posv"
-	contractValidator "github.com/ethereum/go-ethereum/contracts/validator/contract"
 	"github.com/ethereum/go-ethereum/core/state"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
@@ -1194,14 +1189,6 @@ func (bc *BlockChain) insertChain(chain types.Blocks) (int, []interface{}, []*ty
 			if (chain[i].NumberU64() % bc.chainConfig.Posv.Epoch) == 0 {
 				CheckpointCh <- 1
 			}
-			// prepare set of masternodes for the next epoch
-			if (chain[i].NumberU64() % bc.chainConfig.Posv.Epoch) == (bc.chainConfig.Posv.Epoch - bc.chainConfig.Posv.Gap) {
-				err := bc.UpdateM1()
-				if err != nil {
-					log.Error("Error when update masternodes set. Stopping node", "err", err)
-					os.Exit(1)
-				}
-			}
 		}
 	}
 	// Append a single chain head event if we've progressed the chain
@@ -1593,62 +1580,4 @@ func (bc *BlockChain) GetClient() (*ethclient.Client, error) {
 	}
 
 	return bc.Client, nil
-}
-
-func (bc *BlockChain) UpdateM1() error {
-	if bc.Config().Posv == nil {
-		return ErrNotPoSV
-	}
-	engine := bc.Engine().(*posv.Posv)
-	log.Info("It's time to update new set of masternodes for the next epoch...")
-	// get masternodes information from smart contract
-	client, err := bc.GetClient()
-	if err != nil {
-		return err
-	}
-	addr := common.HexToAddress(common.MasternodeVotingSMC)
-	validator, err := contractValidator.NewTomoValidator(addr, client)
-	if err != nil {
-		return err
-	}
-	opts := new(bind.CallOpts)
-	candidates, err := validator.GetCandidates(opts)
-	if err != nil {
-		return err
-	}
-	var ms []posv.Masternode
-	for _, candidate := range candidates {
-		v, err := validator.GetCandidateCap(opts, candidate)
-		if err != nil {
-			return err
-		}
-		//TODO: smart contract shouldn't return "0x0000000000000000000000000000000000000000"
-		if candidate.String() != "0x0000000000000000000000000000000000000000" {
-			ms = append(ms, posv.Masternode{Address: candidate, Stake: v})
-		}
-	}
-	if len(ms) == 0 {
-		log.Error("No masternode found. Stopping node")
-		os.Exit(1)
-	} else {
-		sort.Slice(ms, func(i, j int) bool {
-			return ms[i].Stake.Cmp(ms[j].Stake) >= 0
-		})
-		log.Info("Ordered list of masternode candidates")
-		for _, m := range ms {
-			log.Info("", "address", m.Address.String(), "stake", m.Stake)
-		}
-		// update masternodes
-		log.Info("Updating new set of masternodes")
-		if len(ms) > common.MaxMasternodes {
-			err = engine.UpdateMasternodes(bc, bc.CurrentHeader(), ms[:common.MaxMasternodes])
-		} else {
-			err = engine.UpdateMasternodes(bc, bc.CurrentHeader(), ms)
-		}
-		if err != nil {
-			return err
-		}
-		log.Info("Masternodes are ready for the next epoch")
-	}
-	return nil
 }
