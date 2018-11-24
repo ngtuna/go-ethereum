@@ -394,34 +394,19 @@ func (c *Posv) verifyCascadingFields(chain consensus.ChainReader, header *types.
 	}
 	// If the block is a checkpoint block, verify the signer list
 	if number%c.config.Epoch == 0 {
-		penPenalties := []common.Address{}
-		if c.HookPenalty != nil {
-			penPenalties, err = c.HookPenalty(chain, number)
-			if err != nil {
-				return err
-			}
-			for _, address := range penPenalties {
-				log.Debug("Penalty Info", "address", address, "number", number)
-			}
-			bytePenalties := common.ExtractAddressToBytes(penPenalties)
-			if !bytes.Equal(header.Penalties, bytePenalties) {
-				return errInvalidCheckpointPenalties
-			}
+		signers := make([]byte, len(snap.Signers)*common.AddressLength)
+		i := 0
+		for signer, _ := range snap.Signers {
+			copy(signers[i*common.AddressLength:], signer[:])
+			i++
 		}
-		signers := snap.GetSigners()
-		signers = common.RemoveItemFromArray(signers, penPenalties)
-		for i := 1; i <= common.LimitPenaltyEpoch; i++ {
-			if number > uint64(i)*c.config.Epoch {
-				signers = RemovePenaltiesFromBlock(chain, signers, number-uint64(i)*c.config.Epoch)
-			}
-		}
-		byteMasterNodes := common.ExtractAddressToBytes(signers)
 		extraSuffix := len(header.Extra) - extraSeal
-		if !bytes.Equal(header.Extra[extraVanity:extraSuffix], byteMasterNodes) {
+		if !bytes.Equal(header.Extra[extraVanity:extraSuffix], signers) {
+			log.Debug("masternodes list mismatch", "from header.Extra", header.Extra[extraVanity:extraSuffix], "from snapshot", signers)
 			return errInvalidCheckpointSigners
 		}
 		if c.HookVerifyMNs != nil {
-			err := c.HookVerifyMNs(header, signers)
+			err := c.HookVerifyMNs(header, snap.GetSigners())
 			if err != nil {
 				return err
 			}
@@ -524,7 +509,7 @@ func (c *Posv) snapshot(chain consensus.ChainReader, number uint64, hash common.
 		// checkpoint snapshot = checkpoint
 		if number%c.config.Epoch == 0 {
 			if s, err := loadSnapshot(c.config, c.signatures, c.db, hash); err == nil {
-				log.Trace("Loaded voting snapshot form disk", "number", number, "hash", hash)
+				log.Trace("Loaded snapshot form disk", "number", number, "hash", hash)
 				snap = s
 				break
 			}
@@ -543,7 +528,7 @@ func (c *Posv) snapshot(chain consensus.ChainReader, number uint64, hash common.
 			if err := snap.store(c.db); err != nil {
 				return nil, err
 			}
-			log.Trace("Stored genesis voting snapshot to disk")
+			log.Trace("Stored genesis snapshot to disk")
 			break
 		}
 		// No snapshot for this header, gather the header and move backward
@@ -580,7 +565,7 @@ func (c *Posv) snapshot(chain consensus.ChainReader, number uint64, hash common.
 		if err = snap.store(c.db); err != nil {
 			return nil, err
 		}
-		log.Trace("Stored voting snapshot to disk", "number", snap.Number, "hash", snap.Hash)
+		log.Trace("Stored snapshot to disk", "number", snap.Number, "hash", snap.Hash)
 	}
 	return snap, err
 }
