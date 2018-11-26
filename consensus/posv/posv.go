@@ -25,6 +25,7 @@ import (
 	"strconv"
 	"sync"
 	"time"
+	"strings"
 
 	"github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/common"
@@ -110,6 +111,8 @@ var (
 	// invalid list of signers (i.e. non divisible by 20 bytes, or not the correct
 	// ones).
 	errInvalidCheckpointSigners = errors.New("invalid signer list on checkpoint block")
+
+	errInvalidCheckpointSignersLength = errors.New("invalid number of signers on checkpoint block")
 
 	errInvalidCheckpointPenalties = errors.New("invalid penalty list on checkpoint block")
 
@@ -394,17 +397,18 @@ func (c *Posv) verifyCascadingFields(chain consensus.ChainReader, header *types.
 	}
 	// If the block is a checkpoint block, verify the signer list
 	if number%c.config.Epoch == 0 {
-		signers := make([]byte, len(snap.Signers)*common.AddressLength)
-		i := 0
-		for signer, _ := range snap.Signers {
-			copy(signers[i*common.AddressLength:], signer[:])
-			i++
-		}
 		extraSuffix := len(header.Extra) - extraSeal
-		if !bytes.Equal(header.Extra[extraVanity:extraSuffix], signers) {
-			log.Debug("masternodes list mismatch", "from header.Extra", header.Extra[extraVanity:extraSuffix], "from snapshot", signers)
-			return errInvalidCheckpointSigners
+		headerSigners := common.Bytes2Hex(header.Extra[extraVanity:extraSuffix])
+		if len(header.Extra[extraVanity:extraSuffix])/common.AddressLength != len(snap.Signers) {
+			return errInvalidCheckpointSignersLength
 		}
+		for signer, _ := range snap.Signers {
+			if strings.Index(headerSigners, common.Bytes2Hex(signer[:])) == -1 {
+				log.Debug("masternodes not found", "header.Extra", headerSigners, "from snapshot", common.Bytes2Hex(signer[:]))
+				return errInvalidCheckpointSigners
+			}
+		}
+
 		if c.HookVerifyMNs != nil {
 			err := c.HookVerifyMNs(header, snap.GetSigners())
 			if err != nil {
@@ -716,6 +720,7 @@ func (c *Posv) Prepare(chain consensus.ChainReader, header *types.Header) error 
 		// checkpoint - let's get masternodes list updated
 		if c.HookMasternodes != nil {
 			ms, err := c.HookMasternodes()
+			masternodes = []common.Address{}
 			for _, m := range ms {
 				masternodes = append(masternodes, m.Address)
 			}

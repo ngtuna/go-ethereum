@@ -980,6 +980,7 @@ func (bc *BlockChain) WriteBlockWithState(block *types.Block, receipts []*types.
 		}
 		status = CanonStatTy
 	} else {
+		log.Debug("reorg leads to forked block", "block", block.NumberU64(), "current block", currentBlock.NumberU64())
 		status = SideStatTy
 	}
 	if err := batch.Write(); err != nil {

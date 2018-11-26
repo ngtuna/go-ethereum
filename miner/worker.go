@@ -495,19 +495,23 @@ func (self *worker) commitNewWork() {
 					gap += waitPeriodCheckpoint
 				}
 				log.Info("Distance from the parent block", "seconds", gap, "hops", h)
-			L:
-				select {
-				case newBlock := <-self.chainHeadCh:
-					self.chainHeadCh <- newBlock
-					if newBlock.Block.NumberU64() > parent.NumberU64() {
-						log.Info("New block has came already. Skip this turn", "new block", newBlock.Block.NumberU64(), "current block", parent.NumberU64())
-						return
+				timeout := time.After(time.Duration(gap) * time.Second)
+				L:
+					for {
+						select {
+						case newBlock := <-self.chainHeadCh:
+							self.chainHeadCh <- newBlock
+							if newBlock.Block.NumberU64() > parent.NumberU64() {
+								log.Info("New block has came already. Skip this turn", "new block", newBlock.Block.NumberU64(), "current block", parent.NumberU64())
+								return
+							}
+							log.Debug("New block isn't really new. Keep waiting", "new block", newBlock.Block.NumberU64(), "current block", parent.NumberU64())
+						case <-timeout:
+							// wait enough. It's my turn
+							log.Info("Wait enough. It's my turn", "waited seconds", gap)
+							break L
+						}
 					}
-				case <-time.After(time.Duration(gap) * time.Second):
-					// wait enough. It's my turn
-					log.Info("Wait enough. It's my turn", "waited seconds", gap)
-					break L
-				}
 			}
 		}
 	}
