@@ -515,6 +515,8 @@ func (c *Posv) snapshot(chain consensus.ChainReader, number uint64, hash common.
 		headers []*types.Header
 		snap    *Snapshot
 	)
+	snap.mu.Lock()
+	defer snap.mu.Unlock()
 	for snap == nil {
 		// If an in-memory snapshot was found, use that
 		if s, ok := c.recents.Get(hash); ok {
@@ -633,6 +635,8 @@ func (c *Posv) verifySeal(chain consensus.ChainReader, header *types.Header, par
 	for _, n := range snap.GetSigners() {
 		nstring = append(nstring, n.String())
 	}
+	snap.mu.RLock()
+	defer snap.mu.RUnlock()
 	if _, ok := snap.Signers[creator]; !ok {
 		valid := false
 		for _, m := range masternodes {
@@ -806,10 +810,11 @@ func (c *Posv) UpdateMasternodes(chain consensus.ChainReader, header *types.Head
 	if err != nil {
 		return err
 	}
+	snap.mu.Lock()
+	defer snap.mu.Unlock()
 	currentSigners := snap.GetSigners()
 	proposedSigners := make(map[common.Address]struct{})
 	// count all addresses in ms to be masternode
-	snap.mu.Lock()
 	for _, m := range ms {
 		proposedSigners[m.Address] = struct{}{}
 		snap.Signers[m.Address] = struct{}{}
@@ -820,14 +825,11 @@ func (c *Posv) UpdateMasternodes(chain consensus.ChainReader, header *types.Head
 			delete(snap.Signers, s)
 		}
 	}
-	snap.mu.Unlock()
 	nm := []string{}
-	snap.mu.RLock()
 	newSigners := snap.GetSigners()
 	for _, n := range newSigners {
 		nm = append(nm, n.String())
 	}
-	snap.mu.RUnlock()
 	c.recents.Add(snap.Hash, snap)
 	log.Info("New set of masternodes has been updated to snapshot", "number", snap.Number, "hash", snap.Hash, "new masternodes", nm)
 	return nil
@@ -889,6 +891,8 @@ func (c *Posv) Seal(chain consensus.ChainReader, block *types.Block, stop <-chan
 	if err != nil {
 		return nil, err
 	}
+	snap.mu.RLock()
+	defer snap.mu.RUnlock()
 	masternodes := c.GetMasternodes(chain, header)
 	if _, authorized := snap.Signers[signer]; !authorized {
 		valid := false
@@ -951,6 +955,8 @@ func (c *Posv) CalcDifficulty(chain consensus.ChainReader, time uint64, parent *
 // that a new block should have based on the previous blocks in the chain and the
 // current signer.
 func CalcDifficulty(snap *Snapshot, signer common.Address) *big.Int {
+	snap.mu.RLock()
+	defer snap.mu.RUnlock()
 	if snap.inturn(snap.Number+1, signer) {
 		return new(big.Int).Set(diffInTurn)
 	}

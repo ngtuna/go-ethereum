@@ -104,6 +104,8 @@ func (s *Snapshot) store(db ethdb.Database) error {
 
 // copy creates a deep copy of the snapshot, though not the individual votes.
 func (s *Snapshot) copy() *Snapshot {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
 	cpy := &Snapshot{
 		config:   s.config,
 		sigcache: s.sigcache,
@@ -131,6 +133,8 @@ func (s *Snapshot) copy() *Snapshot {
 // validVote returns whether it makes sense to cast the specified vote in the
 // given snapshot context (e.g. don't try to add an already authorized signer).
 func (s *Snapshot) validVote(address common.Address, authorize bool) bool {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
 	_, signer := s.Signers[address]
 	return (signer && !authorize) || (!signer && authorize)
 }
@@ -141,6 +145,8 @@ func (s *Snapshot) cast(address common.Address, authorize bool) bool {
 	if !s.validVote(address, authorize) {
 		return false
 	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	// Cast the vote into an existing or new tally
 	if old, ok := s.Tally[address]; ok {
 		old.Votes++
@@ -162,6 +168,8 @@ func (s *Snapshot) uncast(address common.Address, authorize bool) bool {
 	if tally.Authorize != authorize {
 		return false
 	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	// Otherwise revert the vote
 	if tally.Votes > 1 {
 		tally.Votes--
@@ -175,6 +183,8 @@ func (s *Snapshot) uncast(address common.Address, authorize bool) bool {
 // apply creates a new authorization snapshot by applying the given headers to
 // the original one.
 func (s *Snapshot) apply(headers []*types.Header) (*Snapshot, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
 	// Allow passing in no headers for cleaner code
 	if len(headers) == 0 {
 		return s, nil
@@ -190,6 +200,8 @@ func (s *Snapshot) apply(headers []*types.Header) (*Snapshot, error) {
 	}
 	// Iterate through the headers and create a new snapshot
 	snap := s.copy()
+	snap.mu.Lock()
+	defer snap.mu.Unlock()
 
 	for _, header := range headers {
 		// Remove any votes on checkpoint blocks
@@ -289,6 +301,8 @@ func (s *Snapshot) apply(headers []*types.Header) (*Snapshot, error) {
 
 // signers retrieves the list of authorized signers in ascending order.
 func (s *Snapshot) GetSigners() []common.Address {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
 	signers := make([]common.Address, 0, len(s.Signers))
 	for signer := range s.Signers {
 		signers = append(signers, signer)
