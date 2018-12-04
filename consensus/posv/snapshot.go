@@ -25,6 +25,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethdb"
 	"github.com/ethereum/go-ethereum/params"
 	lru "github.com/hashicorp/golang-lru"
+	"sync"
 )
 
 // Vote represents a single vote that an authorized signer made to modify the
@@ -47,6 +48,7 @@ import (
 type Snapshot struct {
 	config   *params.PosvConfig // Consensus engine parameters to fine tune behavior
 	sigcache *lru.ARCCache      // Cache of recent block signatures to speed up ecrecover
+	mu       sync.RWMutex
 
 	Number  uint64                          `json:"number"`  // Block number where the snapshot was created
 	Hash    common.Hash                     `json:"hash"`    // Block hash where the snapshot was created

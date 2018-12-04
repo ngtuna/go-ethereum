@@ -809,6 +809,7 @@ func (c *Posv) UpdateMasternodes(chain consensus.ChainReader, header *types.Head
 	currentSigners := snap.GetSigners()
 	proposedSigners := make(map[common.Address]struct{})
 	// count all addresses in ms to be masternode
+	snap.mu.Lock()
 	for _, m := range ms {
 		proposedSigners[m.Address] = struct{}{}
 		snap.Signers[m.Address] = struct{}{}
@@ -819,11 +820,14 @@ func (c *Posv) UpdateMasternodes(chain consensus.ChainReader, header *types.Head
 			delete(snap.Signers, s)
 		}
 	}
+	snap.mu.Unlock()
 	nm := []string{}
+	snap.mu.RLock()
 	newSigners := snap.GetSigners()
 	for _, n := range newSigners {
 		nm = append(nm, n.String())
 	}
+	snap.mu.RUnlock()
 	c.recents.Add(snap.Hash, snap)
 	log.Info("New set of masternodes has been updated to snapshot", "number", snap.Number, "hash", snap.Hash, "new masternodes", nm)
 	return nil
