@@ -82,7 +82,7 @@ func (h *Handler) SetStore(store *storage.NetStore) {
 // Validate is a chunk validation method
 // If it looks like a feed update, the chunk address is checked against the userAddr of the update's signature
 // It implements the storage.ChunkValidator interface
-func (h *Handler) Validate(chunkAddr storage.Address, data []byte) bool {
+func (h *Handler) Validate(chunkAddr storage.Key, data []byte) bool {
 	dataLength := len(data)
 	if dataLength < minimumSignedUpdateLength {
 		return false
@@ -111,7 +111,7 @@ func (h *Handler) Validate(chunkAddr storage.Address, data []byte) bool {
 }
 
 // GetContent retrieves the data payload of the last synced update of the feed
-func (h *Handler) GetContent(feed *Feed) (storage.Address, []byte, error) {
+func (h *Handler) GetContent(feed *Feed) (storage.Key, []byte, error) {
 	if feed == nil {
 		return nil, nil, NewError(ErrInvalidValue, "feed is nil")
 	}
@@ -189,16 +189,16 @@ func (h *Handler) Lookup(ctx context.Context, query *Query) (*cacheEntry, error)
 	requestPtr, err := lookup.Lookup(timeLimit, query.Hint, func(epoch lookup.Epoch, now uint64) (interface{}, error) {
 		readCount++
 		id.Epoch = epoch
-		ctx, cancel := context.WithTimeout(ctx, defaultRetrieveTimeout)
+		_, cancel := context.WithTimeout(ctx, defaultRetrieveTimeout)
 		defer cancel()
 
-		chunk, err := h.chunkStore.Get(ctx, id.Addr())
+		chunk, err := h.chunkStore.Get(id.Addr())
 		if err != nil { // TODO: check for catastrophic errors other than chunk not found
 			return nil, nil
 		}
 
 		var request Request
-		if err := request.fromChunk(chunk.Address(), chunk.Data()); err != nil {
+		if err := request.fromChunk(chunk.Key, chunk.SData); err != nil {
 			return nil, nil
 		}
 		if request.Time <= timeLimit {
@@ -245,7 +245,7 @@ func (h *Handler) updateCache(request *Request) (*cacheEntry, error) {
 // An error will be returned if the total length of the chunk payload will exceed this limit.
 // Update can only check if the caller is trying to overwrite the very last known version, otherwise it just puts the update
 // on the network.
-func (h *Handler) Update(ctx context.Context, r *Request) (updateAddr storage.Address, err error) {
+func (h *Handler) Update(ctx context.Context, r *Request) (updateAddr storage.Key, err error) {
 
 	// we can't update anything without a store
 	if h.chunkStore == nil {
@@ -263,8 +263,8 @@ func (h *Handler) Update(ctx context.Context, r *Request) (updateAddr storage.Ad
 	}
 
 	// send the chunk
-	h.chunkStore.Put(ctx, chunk)
-	log.Trace("feed update", "updateAddr", r.idAddr, "epoch time", r.Epoch.Time, "epoch level", r.Epoch.Level, "data", chunk.Data())
+	h.chunkStore.Put(chunk)
+	log.Trace("feed update", "updateAddr", r.idAddr, "epoch time", r.Epoch.Time, "epoch level", r.Epoch.Level, "data", chunk.SData)
 	// update our feed updates map cache entry if the new update is older than the one we have, if we have it.
 	if feedUpdate != nil && r.Epoch.After(feedUpdate.Epoch) {
 		feedUpdate.Epoch = r.Epoch

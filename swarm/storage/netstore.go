@@ -131,7 +131,7 @@ func (self *NetStore) Get(key Key) (*Chunk, error) {
 	}
 	// no data and no request status
 	log.Trace(fmt.Sprintf("NetStore.Get: %v not found locally. open new request", key))
-	chunk = NewChunk(key, newRequestStatus(key))
+	chunk = NewChunk(key, newRequestStatus(key), nil)
 	self.localStore.memStore.Put(chunk)
 	go self.cloud.Retrieve(chunk)
 	return chunk, nil

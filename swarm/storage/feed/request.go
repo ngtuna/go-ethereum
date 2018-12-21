@@ -31,8 +31,8 @@ import (
 type Request struct {
 	Update     // actual content that will be put on the chunk, less signature
 	Signature  *Signature
-	idAddr     storage.Address // cached chunk address for the update (not serialized, for internal use)
-	binaryData []byte          // cached serialized data (does not get serialized again!, for efficiency/internal use)
+	idAddr     storage.Key // cached chunk address for the update (not serialized, for internal use)
+	binaryData []byte      // cached serialized data (does not get serialized again!, for efficiency/internal use)
 }
 
 // updateRequestJSON represents a JSON-serialized UpdateRequest
@@ -152,7 +152,7 @@ func (r *Request) GetDigest() (result common.Hash, err error) {
 }
 
 // create an update chunk.
-func (r *Request) toChunk() (storage.Chunk, error) {
+func (r *Request) toChunk() (*storage.Chunk, error) {
 
 	// Check that the update is signed and serialized
 	// For efficiency, data is serialized during signature and cached in
@@ -166,12 +166,12 @@ func (r *Request) toChunk() (storage.Chunk, error) {
 	// signature is the last item in the chunk data
 	copy(r.binaryData[updateLength:], r.Signature[:])
 
-	chunk := storage.NewChunk(r.idAddr, r.binaryData)
+	chunk := storage.NewChunk(r.idAddr, nil, r.binaryData)
 	return chunk, nil
 }
 
 // fromChunk populates this structure from chunk data. It does not verify the signature is valid.
-func (r *Request) fromChunk(updateAddr storage.Address, chunkdata []byte) error {
+func (r *Request) fromChunk(updateAddr storage.Key, chunkdata []byte) error {
 	// for update chunk layout see Request definition
 
 	//deserialize the feed update portion

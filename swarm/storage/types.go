@@ -29,6 +29,8 @@ import (
 	"github.com/ethereum/go-ethereum/crypto/sha3"
 )
 
+const AddressLength = 32
+
 type Hasher func() hash.Hash
 type SwarmHasher func() SwarmHash
 
@@ -159,8 +161,8 @@ type Chunk struct {
 	dbStored chan bool       // never remove a chunk from memStore before it is written to dbStore
 }
 
-func NewChunk(key Key, rs *RequestStatus) *Chunk {
-	return &Chunk{Key: key, Req: rs}
+func NewChunk(key Key, rs *RequestStatus, data []byte) *Chunk {
+	return &Chunk{Key: key, Req: rs, SData: data}
 }
 
 /*

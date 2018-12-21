@@ -104,7 +104,7 @@ var tomlSettings = toml.Config{
 //before booting the swarm node, build the configuration
 func buildConfig(ctx *cli.Context) (config *bzzapi.Config, err error) {
 	//start by creating a default config
-	config = bzzapi.NewConfig()
+	config = bzzapi.NewDefaultConfig()
 	//first load settings from config file (if provided)
 	config, err = configFileOverride(config, ctx)
 	if err != nil {
@@ -182,7 +182,7 @@ func cmdLineOverride(currentConfig *bzzapi.Config, ctx *cli.Context) *bzzapi.Con
 			utils.Fatalf("invalid cli flag %s: %v", SwarmNetworkIdFlag.Name, err)
 		}
 		if id != 0 {
-			currentConfig.NetworkID = id
+			currentConfig.NetworkId = id
 		}
 	}
 
