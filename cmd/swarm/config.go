@@ -246,17 +246,17 @@ func cmdLineOverride(currentConfig *bzzapi.Config, ctx *cli.Context) *bzzapi.Con
 		currentConfig.Cors = cors
 	}
 
-	if storePath := ctx.GlobalString(SwarmStorePath.Name); storePath != "" {
-		currentConfig.LocalStoreParams.ChunkDbPath = storePath
-	}
-
-	if storeCapacity := ctx.GlobalUint64(SwarmStoreCapacity.Name); storeCapacity != 0 {
-		currentConfig.LocalStoreParams.DbCapacity = storeCapacity
-	}
-
-	if storeCacheCapacity := ctx.GlobalUint(SwarmStoreCacheCapacity.Name); storeCacheCapacity != 0 {
-		currentConfig.LocalStoreParams.CacheCapacity = storeCacheCapacity
-	}
+	//if storePath := ctx.GlobalString(SwarmStorePath.Name); storePath != "" {
+	//	currentConfig.LocalStoreParams.ChunkDbPath = storePath
+	//}
+	//
+	//if storeCapacity := ctx.GlobalUint64(SwarmStoreCapacity.Name); storeCapacity != 0 {
+	//	currentConfig.LocalStoreParams.DbCapacity = storeCapacity
+	//}
+	//
+	//if storeCacheCapacity := ctx.GlobalUint(SwarmStoreCacheCapacity.Name); storeCacheCapacity != 0 {
+	//	currentConfig.LocalStoreParams.CacheCapacity = storeCacheCapacity
+	//}
 
 	return currentConfig
 
@@ -280,7 +280,7 @@ func envVarsOverride(currentConfig *bzzapi.Config) (config *bzzapi.Config) {
 			utils.Fatalf("invalid environment variable %s: %v", SWARM_ENV_NETWORK_ID, err)
 		}
 		if id != 0 {
-			currentConfig.NetworkID = id
+			currentConfig.NetworkId = id
 		}
 	}
 

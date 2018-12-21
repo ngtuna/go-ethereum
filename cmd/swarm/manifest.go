@@ -81,7 +81,7 @@ func manifestAdd(ctx *cli.Context) {
 	bzzapi := strings.TrimRight(ctx.GlobalString(SwarmApiFlag.Name), "/")
 	client := swarm.NewClient(bzzapi)
 
-	m, _, err := client.DownloadManifest(hash)
+	m, err := client.DownloadManifest(hash)
 	if err != nil {
 		utils.Fatalf("Error downloading manifest to add: %v", err)
 	}
@@ -115,7 +115,7 @@ func manifestUpdate(ctx *cli.Context) {
 	bzzapi := strings.TrimRight(ctx.GlobalString(SwarmApiFlag.Name), "/")
 	client := swarm.NewClient(bzzapi)
 
-	m, _, err := client.DownloadManifest(hash)
+	m, err := client.DownloadManifest(hash)
 	if err != nil {
 		utils.Fatalf("Error downloading manifest to update: %v", err)
 	}
@@ -160,7 +160,7 @@ func manifestRemove(ctx *cli.Context) {
 func addEntryToManifest(client *swarm.Client, mhash, path string, entry api.ManifestEntry) string {
 	var longestPathEntry = api.ManifestEntry{}
 
-	mroot, isEncrypted, err := client.DownloadManifest(mhash)
+	mroot, err := client.DownloadManifest(mhash)
 	if err != nil {
 		utils.Fatalf("Manifest download failed: %v", err)
 	}
@@ -199,7 +199,7 @@ func addEntryToManifest(client *swarm.Client, mhash, path string, entry api.Mani
 		mroot.Entries = append(mroot.Entries, entry)
 	}
 
-	newManifestHash, err := client.UploadManifest(mroot, isEncrypted)
+	newManifestHash, err := client.UploadManifest(mroot)
 	if err != nil {
 		utils.Fatalf("Manifest upload failed: %v", err)
 	}
@@ -218,7 +218,7 @@ func updateEntryInManifest(client *swarm.Client, mhash, path string, entry api.M
 		longestPathEntry = api.ManifestEntry{}
 	)
 
-	mroot, isEncrypted, err := client.DownloadManifest(mhash)
+	mroot, err := client.DownloadManifest(mhash)
 	if err != nil {
 		utils.Fatalf("Manifest download failed: %v", err)
 	}
@@ -282,7 +282,7 @@ func updateEntryInManifest(client *swarm.Client, mhash, path string, entry api.M
 		mroot = newMRoot
 	}
 
-	newManifestHash, err = client.UploadManifest(mroot, isEncrypted)
+	newManifestHash, err = client.UploadManifest(mroot)
 	if err != nil {
 		utils.Fatalf("Manifest upload failed: %v", err)
 	}
@@ -295,7 +295,7 @@ func removeEntryFromManifest(client *swarm.Client, mhash, path string) string {
 		longestPathEntry = api.ManifestEntry{}
 	)
 
-	mroot, isEncrypted, err := client.DownloadManifest(mhash)
+	mroot, err := client.DownloadManifest(mhash)
 	if err != nil {
 		utils.Fatalf("Manifest download failed: %v", err)
 	}
@@ -345,7 +345,7 @@ func removeEntryFromManifest(client *swarm.Client, mhash, path string) string {
 		mroot = newMRoot
 	}
 
-	newManifestHash, err := client.UploadManifest(mroot, isEncrypted)
+	newManifestHash, err := client.UploadManifest(mroot)
 	if err != nil {
 		utils.Fatalf("Manifest upload failed: %v", err)
 	}

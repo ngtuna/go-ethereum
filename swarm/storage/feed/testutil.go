@@ -39,4 +39,3 @@ func (m *mockNetFetcher) Request(ctx context.Context, hopCount uint8) {
 }
 func (m *mockNetFetcher) Offer(ctx context.Context, source *discover.NodeID) {
 }
-

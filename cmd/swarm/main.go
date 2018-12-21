@@ -120,24 +120,72 @@ func init() {
 			Usage:              "Print public key information",
 			Description:        "The output of this command is supposed to be machine-readable",
 		},
-		// See upload.go
-		upCommand,
+		{
+			Name:      "db",
+			Usage:     "manage the local chunk database",
+			ArgsUsage: "db COMMAND",
+			Description: `
+Manage the local chunk database.
+`,
+			Subcommands: []cli.Command{
+				{
+					Action:    dbExport,
+					Name:      "export",
+					Usage:     "export a local chunk database as a tar archive (use - to send to stdout)",
+					ArgsUsage: "<chunkdb> <file>",
+					Description: `
+Export a local chunk database as a tar archive (use - to send to stdout).
+    swarm db export ~/.ethereum/swarm/bzz-KEY/chunks chunks.tar
+The export may be quite large, consider piping the output through the Unix
+pv(1) tool to get a progress bar:
+    swarm db export ~/.ethereum/swarm/bzz-KEY/chunks - | pv > chunks.tar
+`,
+				},
+				{
+					Action:    dbImport,
+					Name:      "import",
+					Usage:     "import chunks from a tar archive into a local chunk database (use - to read from stdin)",
+					ArgsUsage: "<chunkdb> <file>",
+					Description: `
+Import chunks from a tar archive into a local chunk database (use - to read from stdin).
+    swarm db import ~/.ethereum/swarm/bzz-KEY/chunks chunks.tar
+The import may be quite large, consider piping the input through the Unix
+pv(1) tool to get a progress bar:
+    pv chunks.tar | swarm db import ~/.ethereum/swarm/bzz-KEY/chunks -
+`,
+				},
+				{
+					Action:    dbClean,
+					Name:      "clean",
+					Usage:     "remove corrupt entries from a local chunk database",
+					ArgsUsage: "<chunkdb>",
+					Description: `
+Remove corrupt entries from a local chunk database.
+`,
+				},
+			},
+		},
+		{
+			Action:    upload,
+			Name:      "up",
+			Usage:     "upload a file or directory to swarm using the HTTP API",
+			ArgsUsage: " <file>",
+			Description: `
+"upload a file or directory to swarm using the HTTP API and prints the root hash",
+`,
+		},
 		// See access.go
 		accessCommand,
 		// See feeds.go
 		feedCommand,
 		// See list.go
 		listCommand,
-		// See hash.go
-		hashCommand,
-		// See download.go
-		downloadCommand,
 		// See manifest.go
 		manifestCommand,
 		// See fs.go
 		fsCommand,
-		// See db.go
-		dbCommand,
+		//// See db.go
+		//dbCommand,
 		// See config.go
 		DumpConfigCommand,
 	}
@@ -187,6 +235,7 @@ func init() {
 		SwarmUploadDefaultPath,
 		SwarmUpFromStdinFlag,
 		SwarmUploadMimeType,
+		SwarmRecursiveUploadFlag,
 		// storage flags
 		SwarmStorePath,
 		SwarmStoreCapacity,

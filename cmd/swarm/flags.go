@@ -176,4 +176,9 @@ var (
 		Name:  "user",
 		Usage: "Indicates the user who updates the feed",
 	}
+	// Upload
+	SwarmRecursiveUploadFlag = cli.BoolFlag{
+		Name:  "recursive",
+		Usage: "Upload directories recursively",
+	}
 )

@@ -30,6 +30,7 @@ import (
 	"github.com/ethereum/go-ethereum/swarm/network"
 	"github.com/ethereum/go-ethereum/swarm/services/swap"
 	"github.com/ethereum/go-ethereum/swarm/storage"
+	"time"
 )
 
 const (
@@ -46,42 +47,51 @@ type Config struct {
 	*network.HiveParams
 	Swap *swap.SwapParams
 	*network.SyncParams
-	Contract    common.Address
-	EnsRoot     common.Address
-	EnsAPIs     []string
-	Path        string
-	ListenAddr  string
-	Port        string
-	PublicKey   string
-	BzzKey      string
-	NetworkId   uint64
-	SwapEnabled bool
-	SyncEnabled bool
-	SwapApi     string
-	Cors        string
-	BzzAccount  string
-	BootNodes   string
+	Contract             common.Address
+	EnsRoot              common.Address
+	EnsAPIs              []string
+	Path                 string
+	ListenAddr           string
+	Port                 string
+	PublicKey            string
+	BzzKey               string
+	NetworkId            uint64
+	SwapEnabled          bool
+	SyncEnabled          bool
+	SwapApi              string
+	Cors                 string
+	BzzAccount           string
+	BootNodes            string
+	SyncUpdateDelay      time.Duration
+	MaxStreamPeerServers int
+	LightNodeEnabled     bool
+	DeliverySkipCheck    bool
+	SwapAPI              string
 }
 
 //create a default config with all parameters to set to defaults
 func NewDefaultConfig() (self *Config) {
 
 	self = &Config{
-		StoreParams:   storage.NewDefaultStoreParams(),
-		ChunkerParams: storage.NewChunkerParams(),
-		HiveParams:    network.NewDefaultHiveParams(),
-		SyncParams:    network.NewDefaultSyncParams(),
-		Swap:          swap.NewDefaultSwapParams(),
-		ListenAddr:    DefaultHTTPListenAddr,
-		Port:          DefaultHTTPPort,
-		Path:          node.DefaultDataDir(),
-		EnsAPIs:       nil,
-		EnsRoot:       ens.TestNetAddress,
-		NetworkId:     network.NetworkId,
-		SwapEnabled:   false,
-		SyncEnabled:   true,
-		SwapApi:       "",
-		BootNodes:     "",
+		StoreParams:          storage.NewDefaultStoreParams(),
+		ChunkerParams:        storage.NewChunkerParams(),
+		HiveParams:           network.NewDefaultHiveParams(),
+		SyncParams:           network.NewDefaultSyncParams(),
+		Swap:                 swap.NewDefaultSwapParams(),
+		ListenAddr:           DefaultHTTPListenAddr,
+		Port:                 DefaultHTTPPort,
+		Path:                 node.DefaultDataDir(),
+		EnsAPIs:              nil,
+		EnsRoot:              ens.TestNetAddress,
+		NetworkId:            network.NetworkId,
+		SwapEnabled:          false,
+		SyncEnabled:          true,
+		SwapApi:              "",
+		BootNodes:            "",
+		SyncUpdateDelay:      15 * time.Second,
+		MaxStreamPeerServers: 10000,
+		DeliverySkipCheck:    true,
+		SwapAPI:              "",
 	}
 
 	return

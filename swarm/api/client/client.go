@@ -34,11 +34,15 @@ import (
 	"strings"
 
 	"github.com/ethereum/go-ethereum/swarm/api"
+	"github.com/ethereum/go-ethereum/swarm/storage/feed"
+	"net/url"
 )
 
 var (
 	DefaultGateway = "http://localhost:8500"
 	DefaultClient  = NewClient(DefaultGateway)
+	// ErrNoFeedUpdatesFound is returned when Swarm cannot find updates of the given feed
+	ErrNoFeedUpdatesFound = errors.New("No updates found for this feed")
 )
 
 func NewClient(gateway string) *Client {
@@ -462,4 +466,122 @@ func (c *Client) MultipartUpload(hash string, uploader Uploader) (string, error)
 		return "", err
 	}
 	return string(data), nil
+}
+
+// CreateFeedWithManifest creates a feed manifest, initializing it with the provided
+// data
+// Returns the resulting feed manifest address that you can use to include in an ENS Resolver (setContent)
+// or reference future updates (Client.UpdateFeed)
+func (c *Client) CreateFeedWithManifest(request *feed.Request) (string, error) {
+	responseStream, err := c.updateFeed(request, true)
+	if err != nil {
+		return "", err
+	}
+	defer responseStream.Close()
+
+	body, err := ioutil.ReadAll(responseStream)
+	if err != nil {
+		return "", err
+	}
+
+	var manifestAddress string
+	if err = json.Unmarshal(body, &manifestAddress); err != nil {
+		return "", err
+	}
+	return manifestAddress, nil
+}
+
+// GetFeedRequest returns a structure that describes the referenced feed status
+// manifestAddressOrDomain is the address you obtained in CreateFeedWithManifest or an ENS domain whose Resolver
+// points to that address
+func (c *Client) GetFeedRequest(query *feed.Query, manifestAddressOrDomain string) (*feed.Request, error) {
+
+	responseStream, err := c.queryFeed(query, manifestAddressOrDomain, true)
+	if err != nil {
+		return nil, err
+	}
+	defer responseStream.Close()
+
+	body, err := ioutil.ReadAll(responseStream)
+	if err != nil {
+		return nil, err
+	}
+
+	var metadata feed.Request
+	if err := metadata.UnmarshalJSON(body); err != nil {
+		return nil, err
+	}
+	return &metadata, nil
+}
+
+// UpdateFeed allows you to set a new version of your content
+func (c *Client) UpdateFeed(request *feed.Request) error {
+	_, err := c.updateFeed(request, false)
+	return err
+}
+
+func (c *Client) updateFeed(request *feed.Request, createManifest bool) (io.ReadCloser, error) {
+	URL, err := url.Parse(c.Gateway)
+	if err != nil {
+		return nil, err
+	}
+	URL.Path = "/bzz-feed:/"
+	values := URL.Query()
+	body := request.AppendValues(values)
+	if createManifest {
+		values.Set("manifest", "1")
+	}
+	URL.RawQuery = values.Encode()
+
+	req, err := http.NewRequest("POST", URL.String(), bytes.NewBuffer(body))
+	if err != nil {
+		return nil, err
+	}
+
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	return res.Body, nil
+}
+
+// queryFeed returns a byte stream with the raw content of the feed update
+// manifestAddressOrDomain is the address you obtained in CreateFeedWithManifest or an ENS domain whose Resolver
+// points to that address
+// meta set to true will instruct the node return feed metainformation instead
+func (c *Client) queryFeed(query *feed.Query, manifestAddressOrDomain string, meta bool) (io.ReadCloser, error) {
+	URL, err := url.Parse(c.Gateway)
+	if err != nil {
+		return nil, err
+	}
+	URL.Path = "/bzz-feed:/" + manifestAddressOrDomain
+	values := URL.Query()
+	if query != nil {
+		query.AppendValues(values) //adds query parameters
+	}
+	if meta {
+		values.Set("meta", "1")
+	}
+	URL.RawQuery = values.Encode()
+	res, err := http.Get(URL.String())
+	if err != nil {
+		return nil, err
+	}
+
+	if res.StatusCode != http.StatusOK {
+		if res.StatusCode == http.StatusNotFound {
+			return nil, ErrNoFeedUpdatesFound
+		}
+		errorMessageBytes, err := ioutil.ReadAll(res.Body)
+		var errorMessage string
+		if err != nil {
+			errorMessage = "cannot retrieve error message: " + err.Error()
+		} else {
+			errorMessage = string(errorMessageBytes)
+		}
+		return nil, fmt.Errorf("Error retrieving feed updates: %s", errorMessage)
+	}
+
+	return res.Body, nil
 }

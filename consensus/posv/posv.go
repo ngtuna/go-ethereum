@@ -45,8 +45,8 @@ import (
 )
 
 const (
-	inmemorySnapshots  = 128                    // Number of recent vote snapshots to keep in memory
-	M2ByteLength       = 4
+	inmemorySnapshots = 128 // Number of recent vote snapshots to keep in memory
+	M2ByteLength      = 4
 )
 
 type Masternode struct {
