@@ -34,7 +34,7 @@ const (
 type cacheEntry struct {
 	Update
 	*bytes.Reader
-	lastKey storage.Address
+	lastKey storage.Key
 }
 
 // implements storage.LazySectionReader

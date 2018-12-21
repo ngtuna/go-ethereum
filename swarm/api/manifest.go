@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/ethereum/go-ethereum/swarm/storage/feed"
 	"io"
 	"net/http"
 	"strings"
@@ -43,13 +44,15 @@ type Manifest struct {
 
 // ManifestEntry represents an entry in a swarm manifest
 type ManifestEntry struct {
-	Hash        string    `json:"hash,omitempty"`
-	Path        string    `json:"path,omitempty"`
-	ContentType string    `json:"contentType,omitempty"`
-	Mode        int64     `json:"mode,omitempty"`
-	Size        int64     `json:"size,omitempty"`
-	ModTime     time.Time `json:"mod_time,omitempty"`
-	Status      int       `json:"status,omitempty"`
+	Hash        string       `json:"hash,omitempty"`
+	Path        string       `json:"path,omitempty"`
+	ContentType string       `json:"contentType,omitempty"`
+	Mode        int64        `json:"mode,omitempty"`
+	Size        int64        `json:"size,omitempty"`
+	ModTime     time.Time    `json:"mod_time,omitempty"`
+	Status      int          `json:"status,omitempty"`
+	Access      *AccessEntry `json:"access,omitempty"`
+	Feed        *feed.Feed   `json:"feed,omitempty"`
 }
 
 // ManifestList represents the result of listing files in a manifest

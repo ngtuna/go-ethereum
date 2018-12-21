@@ -118,7 +118,7 @@ func (self *Depo) HandleStoreRequestMsg(req *storeRequestMsgData, p *peer) {
 		// not found in memory cache, ie., a genuine store request
 		// create chunk
 		syncReceiveCount.Inc(1)
-		chunk = storage.NewChunk(req.Key, nil)
+		chunk = storage.NewChunk(req.Key, nil, nil)
 
 	case chunk.SData == nil:
 		// found chunk in memory store, needs the data, validate now

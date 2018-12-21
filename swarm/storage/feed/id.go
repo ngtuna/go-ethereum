@@ -39,7 +39,7 @@ type ID struct {
 const idLength = feedLength + lookup.EpochLength
 
 // Addr calculates the feed update chunk address corresponding to this ID
-func (u *ID) Addr() (updateAddr storage.Address) {
+func (u *ID) Addr() (updateAddr storage.Key) {
 	serializedData := make([]byte, idLength)
 	var cursor int
 	u.Feed.binaryPut(serializedData[cursor : cursor+feedLength])
