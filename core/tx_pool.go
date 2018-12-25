@@ -614,11 +614,10 @@ func (pool *TxPool) validateTx(tx *types.Transaction, local bool) error {
 		if tx.Gas() < intrGas {
 			return ErrIntrinsicGas
 		}
-
-		// Check zero gas price.
-		if tx.GasPrice().Cmp(new(big.Int).SetInt64(0)) == 0 {
-			return ErrZeroGasPrice
-		}
+	}
+	// Check zero gas price.
+	if tx.GasPrice().Cmp(new(big.Int).SetInt64(0)) == 0 {
+		return ErrZeroGasPrice
 	}
 
 	return nil
