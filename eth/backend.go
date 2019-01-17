@@ -292,7 +292,8 @@ func New(ctx *node.ServiceContext, config *Config) (*Ethereum, error) {
 
 		// Hook calculates reward for masternodes
 		c.HookReward = func(chain consensus.ChainReader, state *state.StateDB, header *types.Header) (error, map[string]interface{}) {
-			canonicalState, err := eth.blockchain.State()
+			parentHeader := eth.blockchain.GetHeader(header.ParentHash, header.Number.Uint64()-1)
+			canonicalState, err := eth.blockchain.StateAt(parentHeader.Root)
 			if canonicalState == nil || err != nil {
 				log.Crit("Can't get state at head of canonical chain", "head number", header.Number.Uint64(), "err", err)
 			}
@@ -312,7 +313,7 @@ func New(ctx *node.ServiceContext, config *Config) (*Ethereum, error) {
 				chainReward = rewardInflation(chainReward, number, common.BlocksPerYear)
 
 				totalSigner := new(uint64)
-				signers, err := contracts.GetRewardForCheckpoint(c, chain, number, rCheckpoint, totalSigner)
+				signers, err := contracts.GetRewardForCheckpoint(c, chain, header, rCheckpoint, totalSigner)
 
 				log.Debug("Time Get Signers", "block", header.Number.Uint64(), "time", common.PrettyDuration(time.Since(start)))
 				if err != nil {
