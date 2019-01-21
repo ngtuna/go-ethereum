@@ -388,47 +388,48 @@ func (c *Posv) verifyCascadingFields(chain consensus.ChainReader, header *types.
 		return ErrInvalidTimestamp
 	}
 	// Retrieve the snapshot needed to verify this header and cache it
-	snap, err := c.snapshot(chain, number-1, header.ParentHash, parents)
-	if err != nil {
-		return err
-	}
+	//snap, err := c.snapshot(chain, number-1, header.ParentHash, parents)
+	//if err != nil {
+	//	return err
+	//}
 	// If the block is a checkpoint block, verify the signer list
-	if number%c.config.Epoch == 0 {
-		penPenalties := []common.Address{}
-		if c.HookPenalty != nil {
-			penPenalties, err = c.HookPenalty(chain, number)
-			if err != nil {
-				return err
-			}
-			for _, address := range penPenalties {
-				log.Debug("Penalty Info", "address", address, "number", number)
-			}
-			bytePenalties := common.ExtractAddressToBytes(penPenalties)
-			if !bytes.Equal(header.Penalties, bytePenalties) {
-				return errInvalidCheckpointPenalties
-			}
-		}
-		signers := snap.GetSigners()
-		signers = common.RemoveItemFromArray(signers, penPenalties)
-		for i := 1; i <= common.LimitPenaltyEpoch; i++ {
-			if number > uint64(i)*c.config.Epoch {
-				signers = RemovePenaltiesFromBlock(chain, signers, number-uint64(i)*c.config.Epoch)
-			}
-		}
-		byteMasterNodes := common.ExtractAddressToBytes(signers)
-		extraSuffix := len(header.Extra) - extraSeal
-		if !bytes.Equal(header.Extra[extraVanity:extraSuffix], byteMasterNodes) {
-			return errInvalidCheckpointSigners
-		}
-		if c.HookVerifyMNs != nil {
-			err := c.HookVerifyMNs(header, signers)
-			if err != nil {
-				return err
-			}
-		}
-	}
+	//if number%c.config.Epoch == 0 {
+	//	penPenalties := []common.Address{}
+	//	if c.HookPenalty != nil {
+	//		penPenalties, err = c.HookPenalty(chain, number)
+	//		if err != nil {
+	//			return err
+	//		}
+	//		for _, address := range penPenalties {
+	//			log.Debug("Penalty Info", "address", address, "number", number)
+	//		}
+	//		bytePenalties := common.ExtractAddressToBytes(penPenalties)
+	//		if !bytes.Equal(header.Penalties, bytePenalties) {
+	//			return errInvalidCheckpointPenalties
+	//		}
+	//	}
+	//	signers := snap.GetSigners()
+	//	signers = common.RemoveItemFromArray(signers, penPenalties)
+	//	for i := 1; i <= common.LimitPenaltyEpoch; i++ {
+	//		if number > uint64(i)*c.config.Epoch {
+	//			signers = RemovePenaltiesFromBlock(chain, signers, number-uint64(i)*c.config.Epoch)
+	//		}
+	//	}
+	//	byteMasterNodes := common.ExtractAddressToBytes(signers)
+	//	extraSuffix := len(header.Extra) - extraSeal
+	//	if !bytes.Equal(header.Extra[extraVanity:extraSuffix], byteMasterNodes) {
+	//		return errInvalidCheckpointSigners
+	//	}
+	//	if c.HookVerifyMNs != nil {
+	//		err := c.HookVerifyMNs(header, signers)
+	//		if err != nil {
+	//			return err
+	//		}
+	//	}
+	//}
 	// All basic checks passed, verify the seal and return
-	return c.verifySeal(chain, header, parents, fullVerify)
+	//return c.verifySeal(chain, header, parents, fullVerify)
+	return nil
 }
 
 func (c *Posv) GetSnapshot(chain consensus.ChainReader, header *types.Header) (*Snapshot, error) {
