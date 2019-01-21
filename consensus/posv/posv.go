@@ -34,7 +34,7 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/consensus"
 	"github.com/ethereum/go-ethereum/consensus/clique"
-	"github.com/ethereum/go-ethereum/consensus/misc"
+	//"github.com/ethereum/go-ethereum/consensus/misc"
 	"github.com/ethereum/go-ethereum/core/state"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -307,10 +307,10 @@ func (c *Posv) verifyHeaderWithCache(chain consensus.ChainReader, header *types.
 // looking those up from the database. This is useful for concurrently verifying
 // a batch of new headers.
 func (c *Posv) verifyHeader(chain consensus.ChainReader, header *types.Header, parents []*types.Header, fullVerify bool) error {
-	if header.Number == nil {
-		return errUnknownBlock
-	}
-	number := header.Number.Uint64()
+	//if header.Number == nil {
+	//	return errUnknownBlock
+	//}
+	//number := header.Number.Uint64()
 	if fullVerify {
 		if header.Number.Uint64() > c.config.Epoch && len(header.Validator) == 0 {
 			return consensus.ErrNoValidatorSignature
@@ -321,47 +321,48 @@ func (c *Posv) verifyHeader(chain consensus.ChainReader, header *types.Header, p
 		}
 	}
 	// Checkpoint blocks need to enforce zero beneficiary
-	checkpoint := (number % c.config.Epoch) == 0
-	if checkpoint && header.Coinbase != (common.Address{}) {
-		return errInvalidCheckpointBeneficiary
-	}
-
-	// Nonces must be 0x00..0 or 0xff..f, zeroes enforced on checkpoints
-	if !bytes.Equal(header.Nonce[:], nonceAuthVote) && !bytes.Equal(header.Nonce[:], nonceDropVote) {
-		return errInvalidVote
-	}
-	if checkpoint && !bytes.Equal(header.Nonce[:], nonceDropVote) {
-		return errInvalidCheckpointVote
-	}
-	// Check that the extra-data contains both the vanity and signature
-	if len(header.Extra) < extraVanity {
-		return errMissingVanity
-	}
-	if len(header.Extra) < extraVanity+extraSeal {
-		return errMissingSignature
-	}
-	// Ensure that the extra-data contains a signer list on checkpoint, but none otherwise
-	signersBytes := len(header.Extra) - extraVanity - extraSeal
-	if !checkpoint && signersBytes != 0 {
-		return errExtraSigners
-	}
-	if checkpoint && signersBytes%common.AddressLength != 0 {
-		return errInvalidCheckpointSigners
-	}
-	// Ensure that the mix digest is zero as we don't have fork protection currently
-	if header.MixDigest != (common.Hash{}) {
-		return errInvalidMixDigest
-	}
-	// Ensure that the block doesn't contain any uncles which are meaningless in PoSV
-	if header.UncleHash != uncleHash {
-		return errInvalidUncleHash
-	}
-	// If all checks passed, validate any special fields for hard forks
-	if err := misc.VerifyForkHashes(chain.Config(), header, false); err != nil {
-		return err
-	}
+	//checkpoint := (number % c.config.Epoch) == 0
+	//if checkpoint && header.Coinbase != (common.Address{}) {
+	//	return errInvalidCheckpointBeneficiary
+	//}
+	//
+	//// Nonces must be 0x00..0 or 0xff..f, zeroes enforced on checkpoints
+	//if !bytes.Equal(header.Nonce[:], nonceAuthVote) && !bytes.Equal(header.Nonce[:], nonceDropVote) {
+	//	return errInvalidVote
+	//}
+	//if checkpoint && !bytes.Equal(header.Nonce[:], nonceDropVote) {
+	//	return errInvalidCheckpointVote
+	//}
+	//// Check that the extra-data contains both the vanity and signature
+	//if len(header.Extra) < extraVanity {
+	//	return errMissingVanity
+	//}
+	//if len(header.Extra) < extraVanity+extraSeal {
+	//	return errMissingSignature
+	//}
+	//// Ensure that the extra-data contains a signer list on checkpoint, but none otherwise
+	//signersBytes := len(header.Extra) - extraVanity - extraSeal
+	//if !checkpoint && signersBytes != 0 {
+	//	return errExtraSigners
+	//}
+	//if checkpoint && signersBytes%common.AddressLength != 0 {
+	//	return errInvalidCheckpointSigners
+	//}
+	//// Ensure that the mix digest is zero as we don't have fork protection currently
+	//if header.MixDigest != (common.Hash{}) {
+	//	return errInvalidMixDigest
+	//}
+	//// Ensure that the block doesn't contain any uncles which are meaningless in PoSV
+	//if header.UncleHash != uncleHash {
+	//	return errInvalidUncleHash
+	//}
+	//// If all checks passed, validate any special fields for hard forks
+	//if err := misc.VerifyForkHashes(chain.Config(), header, false); err != nil {
+	//	return err
+	//}
 	// All basic checks passed, verify cascading fields
-	return c.verifyCascadingFields(chain, header, parents, fullVerify)
+	//return c.verifyCascadingFields(chain, header, parents, fullVerify)
+	return nil
 }
 
 // verifyCascadingFields verifies all the header fields that are not standalone,

@@ -1094,9 +1094,9 @@ func (bc *BlockChain) insertChain(chain types.Blocks) (int, []interface{}, []*ty
 		bstart := time.Now()
 
 		err := <-results
-		if err == nil {
-			err = bc.Validator().ValidateBody(block)
-		}
+		//if err == nil {
+		//	err = bc.Validator().ValidateBody(block)
+		//}
 		switch {
 		case err == ErrKnownBlock:
 			// Block and state both already known. However if the current block is below
@@ -1178,19 +1178,22 @@ func (bc *BlockChain) insertChain(chain types.Blocks) (int, []interface{}, []*ty
 			bc.reportBlock(block, receipts, err)
 			return i, events, coalescedLogs, err
 		}
+		log.Debug("Time Calculated processing block", "elapsed", common.PrettyDuration(time.Since(bstart)))
 		// Validate the state using the default validator
-		err = bc.Validator().ValidateState(block, parent, state, receipts, usedGas)
-		if err != nil {
-			bc.reportBlock(block, receipts, err)
-			return i, events, coalescedLogs, err
-		}
+		//err = bc.Validator().ValidateState(block, parent, state, receipts, usedGas)
+		//if err != nil {
+		//	bc.reportBlock(block, receipts, err)
+		//	return i, events, coalescedLogs, err
+		//}
 		proctime := time.Since(bstart)
+		pstart := time.Now()
 
 		// Write the block to the chain and get the status.
 		status, err := bc.WriteBlockWithState(block, receipts, state)
 		if err != nil {
 			return i, events, coalescedLogs, err
 		}
+		log.Debug("Time Calculated writing state", "elapsed", common.PrettyDuration(time.Since(pstart)))
 		switch status {
 		case CanonStatTy:
 			log.Debug("Inserted new block from downloader", "number", block.Number(), "hash", block.Hash(), "uncles", len(block.Uncles()),
