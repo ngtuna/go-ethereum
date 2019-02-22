@@ -13,9 +13,6 @@ var _ = (*newMessageOverride)(nil)
 // MarshalJSON marshals type NewMessage to a json string
 func (n NewMessage) MarshalJSON() ([]byte, error) {
 	type NewMessage struct {
-		SymKeyID   string        `json:"symKeyID"`
-		PublicKey  hexutil.Bytes `json:"pubKey"`
-		Sig        string        `json:"sig"`
 		TTL        uint32        `json:"ttl"`
 		Topic      TopicType     `json:"topic"`
 		Payload    hexutil.Bytes `json:"payload"`
@@ -25,9 +22,6 @@ func (n NewMessage) MarshalJSON() ([]byte, error) {
 		TargetPeer string        `json:"targetPeer"`
 	}
 	var enc NewMessage
-	enc.SymKeyID = n.SymKeyID
-	enc.PublicKey = n.PublicKey
-	enc.Sig = n.Sig
 	enc.TTL = n.TTL
 	enc.Topic = n.Topic
 	enc.Payload = n.Payload
@@ -41,9 +35,6 @@ func (n NewMessage) MarshalJSON() ([]byte, error) {
 // UnmarshalJSON unmarshals type NewMessage to a json string
 func (n *NewMessage) UnmarshalJSON(input []byte) error {
 	type NewMessage struct {
-		SymKeyID   *string        `json:"symKeyID"`
-		PublicKey  *hexutil.Bytes `json:"pubKey"`
-		Sig        *string        `json:"sig"`
 		TTL        *uint32        `json:"ttl"`
 		Topic      *TopicType     `json:"topic"`
 		Payload    *hexutil.Bytes `json:"payload"`
@@ -55,15 +46,6 @@ func (n *NewMessage) UnmarshalJSON(input []byte) error {
 	var dec NewMessage
 	if err := json.Unmarshal(input, &dec); err != nil {
 		return err
-	}
-	if dec.SymKeyID != nil {
-		n.SymKeyID = *dec.SymKeyID
-	}
-	if dec.PublicKey != nil {
-		n.PublicKey = *dec.PublicKey
-	}
-	if dec.Sig != nil {
-		n.Sig = *dec.Sig
 	}
 	if dec.TTL != nil {
 		n.TTL = *dec.TTL

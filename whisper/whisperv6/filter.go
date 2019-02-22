@@ -184,7 +184,7 @@ func (fs *Filters) NotifyWatchers(env *Envelope, p2pMessage bool) {
 
 		if match && msg != nil {
 			log.Trace("processing message: decrypted", "hash", env.Hash().Hex())
-			if watcher.Src == nil || IsPubKeyEqual(msg.Src, watcher.Src) {
+			if watcher.Src == nil {
 				watcher.Trigger(msg)
 			}
 		}
@@ -234,12 +234,7 @@ func (f *Filter) MatchMessage(msg *ReceivedMessage) bool {
 		return false
 	}
 
-	if f.expectsAsymmetricEncryption() && msg.isAsymmetricEncryption() {
-		return IsPubKeyEqual(&f.KeyAsym.PublicKey, msg.Dst)
-	} else if f.expectsSymmetricEncryption() && msg.isSymmetricEncryption() {
-		return f.SymKeyHash == msg.SymKeyHash
-	}
-	return false
+	return true
 }
 
 // MatchEnvelope checks if it's worth decrypting the message. If
@@ -267,13 +262,3 @@ func matchSingleTopic(topic TopicType, bt []byte) bool {
 	return true
 }
 
-// IsPubKeyEqual checks that two public keys are equal
-func IsPubKeyEqual(a, b *ecdsa.PublicKey) bool {
-	if !ValidatePublicKey(a) {
-		return false
-	} else if !ValidatePublicKey(b) {
-		return false
-	}
-	// the curve is always the same, just compare the points
-	return a.X.Cmp(b.X) == 0 && a.Y.Cmp(b.Y) == 0
-}

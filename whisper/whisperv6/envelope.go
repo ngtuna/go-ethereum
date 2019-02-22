@@ -19,7 +19,6 @@
 package whisperv6
 
 import (
-	"crypto/ecdsa"
 	"encoding/binary"
 	"fmt"
 	gmath "math"
@@ -29,7 +28,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/math"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/crypto/ecies"
 	"github.com/ethereum/go-ethereum/rlp"
 )
 
@@ -182,28 +180,11 @@ func (e *Envelope) DecodeRLP(s *rlp.Stream) error {
 	return nil
 }
 
-// OpenAsymmetric tries to decrypt an envelope, potentially encrypted with a particular key.
-func (e *Envelope) OpenAsymmetric(key *ecdsa.PrivateKey) (*ReceivedMessage, error) {
-	message := &ReceivedMessage{Raw: e.Data}
-	err := message.decryptAsymmetric(key)
-	switch err {
-	case nil:
-		return message, nil
-	case ecies.ErrInvalidPublicKey: // addressed to somebody else
-		return nil, err
-	default:
-		return nil, fmt.Errorf("unable to open envelope, decrypt failed: %v", err)
-	}
-}
 
 // OpenSymmetric tries to decrypt an envelope, potentially encrypted with a particular key.
-func (e *Envelope) OpenSymmetric(key []byte) (msg *ReceivedMessage, err error) {
+func (e *Envelope) OpenEnvelope() (msg *ReceivedMessage) {
 	msg = &ReceivedMessage{Raw: e.Data}
-	err = msg.decryptSymmetric(key)
-	if err != nil {
-		msg = nil
-	}
-	return msg, err
+	return msg
 }
 
 // Open tries to decrypt an envelope, and populates the message fields in case of success.
@@ -211,23 +192,7 @@ func (e *Envelope) Open(watcher *Filter) (msg *ReceivedMessage) {
 	if watcher == nil {
 		return nil
 	}
-
-	// The API interface forbids filters doing both symmetric and asymmetric encryption.
-	if watcher.expectsAsymmetricEncryption() && watcher.expectsSymmetricEncryption() {
-		return nil
-	}
-
-	if watcher.expectsAsymmetricEncryption() {
-		msg, _ = e.OpenAsymmetric(watcher.KeyAsym)
-		if msg != nil {
-			msg.Dst = &watcher.KeyAsym.PublicKey
-		}
-	} else if watcher.expectsSymmetricEncryption() {
-		msg, _ = e.OpenSymmetric(watcher.KeySym)
-		if msg != nil {
-			msg.SymKeyHash = crypto.Keccak256Hash(watcher.KeySym)
-		}
-	}
+	msg = e.OpenEnvelope()
 
 	if msg != nil {
 		ok := msg.ValidateAndParse()

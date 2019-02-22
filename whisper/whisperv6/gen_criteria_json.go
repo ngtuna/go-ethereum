@@ -4,8 +4,6 @@ package whisperv6
 
 import (
 	"encoding/json"
-
-	"github.com/ethereum/go-ethereum/common/hexutil"
 )
 
 var _ = (*criteriaOverride)(nil)
@@ -13,17 +11,11 @@ var _ = (*criteriaOverride)(nil)
 // MarshalJSON marshals type Criteria to a json string
 func (c Criteria) MarshalJSON() ([]byte, error) {
 	type Criteria struct {
-		SymKeyID     string        `json:"symKeyID"`
-		PrivateKeyID string        `json:"privateKeyID"`
-		Sig          hexutil.Bytes `json:"sig"`
 		MinPow       float64       `json:"minPow"`
 		Topics       []TopicType   `json:"topics"`
 		AllowP2P     bool          `json:"allowP2P"`
 	}
 	var enc Criteria
-	enc.SymKeyID = c.SymKeyID
-	enc.PrivateKeyID = c.PrivateKeyID
-	enc.Sig = c.Sig
 	enc.MinPow = c.MinPow
 	enc.Topics = c.Topics
 	enc.AllowP2P = c.AllowP2P
@@ -33,9 +25,6 @@ func (c Criteria) MarshalJSON() ([]byte, error) {
 // UnmarshalJSON unmarshals type Criteria to a json string
 func (c *Criteria) UnmarshalJSON(input []byte) error {
 	type Criteria struct {
-		SymKeyID     *string        `json:"symKeyID"`
-		PrivateKeyID *string        `json:"privateKeyID"`
-		Sig          *hexutil.Bytes `json:"sig"`
 		MinPow       *float64       `json:"minPow"`
 		Topics       []TopicType    `json:"topics"`
 		AllowP2P     *bool          `json:"allowP2P"`
@@ -43,15 +32,6 @@ func (c *Criteria) UnmarshalJSON(input []byte) error {
 	var dec Criteria
 	if err := json.Unmarshal(input, &dec); err != nil {
 		return err
-	}
-	if dec.SymKeyID != nil {
-		c.SymKeyID = *dec.SymKeyID
-	}
-	if dec.PrivateKeyID != nil {
-		c.PrivateKeyID = *dec.PrivateKeyID
-	}
-	if dec.Sig != nil {
-		c.Sig = *dec.Sig
 	}
 	if dec.MinPow != nil {
 		c.MinPow = *dec.MinPow

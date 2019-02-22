@@ -18,7 +18,6 @@ package whisperv6
 
 import (
 	"context"
-	"crypto/ecdsa"
 	"errors"
 	"fmt"
 	"sync"
@@ -26,7 +25,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/p2p/discover"
 	"github.com/ethereum/go-ethereum/rpc"
@@ -38,10 +36,6 @@ const (
 
 // List of errors
 var (
-	ErrSymAsym              = errors.New("specify either a symmetric or an asymmetric key")
-	ErrInvalidSymmetricKey  = errors.New("invalid symmetric key")
-	ErrInvalidPublicKey     = errors.New("invalid public key")
-	ErrInvalidSigningPubKey = errors.New("invalid signing public key")
 	ErrTooLowPoW            = errors.New("message rejected, PoW too low")
 	ErrNoTopics             = errors.New("missing topic(s)")
 )
@@ -114,88 +108,6 @@ func (api *PublicWhisperAPI) MarkTrustedPeer(ctx context.Context, enode string) 
 	return true, api.w.AllowP2PMessagesFromPeer(n.ID[:])
 }
 
-// NewKeyPair generates a new public and private key pair for message decryption and encryption.
-// It returns an ID that can be used to refer to the keypair.
-func (api *PublicWhisperAPI) NewKeyPair(ctx context.Context) (string, error) {
-	return api.w.NewKeyPair()
-}
-
-// AddPrivateKey imports the given private key.
-func (api *PublicWhisperAPI) AddPrivateKey(ctx context.Context, privateKey hexutil.Bytes) (string, error) {
-	key, err := crypto.ToECDSA(privateKey)
-	if err != nil {
-		return "", err
-	}
-	return api.w.AddKeyPair(key)
-}
-
-// DeleteKeyPair removes the key with the given key if it exists.
-func (api *PublicWhisperAPI) DeleteKeyPair(ctx context.Context, key string) (bool, error) {
-	if ok := api.w.DeleteKeyPair(key); ok {
-		return true, nil
-	}
-	return false, fmt.Errorf("key pair %s not found", key)
-}
-
-// HasKeyPair returns an indication if the node has a key pair that is associated with the given id.
-func (api *PublicWhisperAPI) HasKeyPair(ctx context.Context, id string) bool {
-	return api.w.HasKeyPair(id)
-}
-
-// GetPublicKey returns the public key associated with the given key. The key is the hex
-// encoded representation of a key in the form specified in section 4.3.6 of ANSI X9.62.
-func (api *PublicWhisperAPI) GetPublicKey(ctx context.Context, id string) (hexutil.Bytes, error) {
-	key, err := api.w.GetPrivateKey(id)
-	if err != nil {
-		return hexutil.Bytes{}, err
-	}
-	return crypto.FromECDSAPub(&key.PublicKey), nil
-}
-
-// GetPrivateKey returns the private key associated with the given key. The key is the hex
-// encoded representation of a key in the form specified in section 4.3.6 of ANSI X9.62.
-func (api *PublicWhisperAPI) GetPrivateKey(ctx context.Context, id string) (hexutil.Bytes, error) {
-	key, err := api.w.GetPrivateKey(id)
-	if err != nil {
-		return hexutil.Bytes{}, err
-	}
-	return crypto.FromECDSA(key), nil
-}
-
-// NewSymKey generate a random symmetric key.
-// It returns an ID that can be used to refer to the key.
-// Can be used encrypting and decrypting messages where the key is known to both parties.
-func (api *PublicWhisperAPI) NewSymKey(ctx context.Context) (string, error) {
-	return api.w.GenerateSymKey()
-}
-
-// AddSymKey import a symmetric key.
-// It returns an ID that can be used to refer to the key.
-// Can be used encrypting and decrypting messages where the key is known to both parties.
-func (api *PublicWhisperAPI) AddSymKey(ctx context.Context, key hexutil.Bytes) (string, error) {
-	return api.w.AddSymKeyDirect([]byte(key))
-}
-
-// GenerateSymKeyFromPassword derive a key from the given password, stores it, and returns its ID.
-func (api *PublicWhisperAPI) GenerateSymKeyFromPassword(ctx context.Context, passwd string) (string, error) {
-	return api.w.AddSymKeyFromPassword(passwd)
-}
-
-// HasSymKey returns an indication if the node has a symmetric key associated with the given key.
-func (api *PublicWhisperAPI) HasSymKey(ctx context.Context, id string) bool {
-	return api.w.HasSymKey(id)
-}
-
-// GetSymKey returns the symmetric key associated with the given id.
-func (api *PublicWhisperAPI) GetSymKey(ctx context.Context, id string) (hexutil.Bytes, error) {
-	return api.w.GetSymKey(id)
-}
-
-// DeleteSymKey deletes the symmetric key that is associated with the given id.
-func (api *PublicWhisperAPI) DeleteSymKey(ctx context.Context, id string) bool {
-	return api.w.DeleteSymKey(id)
-}
-
 // MakeLightClient turns the node into light client, which does not forward
 // any incoming messages, and sends only messages originated in this node.
 func (api *PublicWhisperAPI) MakeLightClient(ctx context.Context) bool {
@@ -213,9 +125,6 @@ func (api *PublicWhisperAPI) CancelLightClient(ctx context.Context) bool {
 
 // NewMessage represents a new whisper message that is posted through the RPC.
 type NewMessage struct {
-	SymKeyID   string    `json:"symKeyID"`
-	PublicKey  []byte    `json:"pubKey"`
-	Sig        string    `json:"sig"`
 	TTL        uint32    `json:"ttl"`
 	Topic      TopicType `json:"topic"`
 	Payload    []byte    `json:"payload"`
@@ -226,7 +135,6 @@ type NewMessage struct {
 }
 
 type newMessageOverride struct {
-	PublicKey hexutil.Bytes
 	Payload   hexutil.Bytes
 	Padding   hexutil.Bytes
 }
@@ -234,15 +142,8 @@ type newMessageOverride struct {
 // Post a message on the Whisper network.
 func (api *PublicWhisperAPI) Post(ctx context.Context, req NewMessage) (bool, error) {
 	var (
-		symKeyGiven = len(req.SymKeyID) > 0
-		pubKeyGiven = len(req.PublicKey) > 0
 		err         error
 	)
-
-	// user must specify either a symmetric or an asymmetric key
-	if (symKeyGiven && pubKeyGiven) || (!symKeyGiven && !pubKeyGiven) {
-		return false, ErrSymAsym
-	}
 
 	params := &MessageParams{
 		TTL:      req.TTL,
@@ -253,33 +154,10 @@ func (api *PublicWhisperAPI) Post(ctx context.Context, req NewMessage) (bool, er
 		Topic:    req.Topic,
 	}
 
-	// Set key that is used to sign the message
-	if len(req.Sig) > 0 {
-		if params.Src, err = api.w.GetPrivateKey(req.Sig); err != nil {
-			return false, err
-		}
+	if params.Topic == (TopicType{}) { // topics are mandatory with symmetric encryption
+		return false, ErrNoTopics
 	}
 
-	// Set symmetric key that is used to encrypt the message
-	if symKeyGiven {
-		if params.Topic == (TopicType{}) { // topics are mandatory with symmetric encryption
-			return false, ErrNoTopics
-		}
-		if params.KeySym, err = api.w.GetSymKey(req.SymKeyID); err != nil {
-			return false, err
-		}
-		if !validateDataIntegrity(params.KeySym, aesKeyLength) {
-			return false, ErrInvalidSymmetricKey
-		}
-	}
-
-	// Set asymmetric key that is used to encrypt the message
-	if pubKeyGiven {
-		params.Dst = crypto.ToECDSAPub(req.PublicKey)
-		if !ValidatePublicKey(params.Dst) {
-			return false, ErrInvalidPublicKey
-		}
-	}
 
 	// encrypt and sent message
 	whisperMsg, err := NewSentMessage(params)
@@ -313,9 +191,6 @@ func (api *PublicWhisperAPI) Post(ctx context.Context, req NewMessage) (bool, er
 
 // Criteria holds various filter options for inbound messages.
 type Criteria struct {
-	SymKeyID     string      `json:"symKeyID"`
-	PrivateKeyID string      `json:"privateKeyID"`
-	Sig          []byte      `json:"sig"`
 	MinPow       float64     `json:"minPow"`
 	Topics       []TopicType `json:"topics"`
 	AllowP2P     bool        `json:"allowP2P"`
@@ -329,8 +204,6 @@ type criteriaOverride struct {
 // the given set of criteria.
 func (api *PublicWhisperAPI) Messages(ctx context.Context, crit Criteria) (*rpc.Subscription, error) {
 	var (
-		symKeyGiven = len(crit.SymKeyID) > 0
-		pubKeyGiven = len(crit.PrivateKeyID) > 0
 		err         error
 	)
 
@@ -340,22 +213,10 @@ func (api *PublicWhisperAPI) Messages(ctx context.Context, crit Criteria) (*rpc.
 		return nil, rpc.ErrNotificationsUnsupported
 	}
 
-	// user must specify either a symmetric or an asymmetric key
-	if (symKeyGiven && pubKeyGiven) || (!symKeyGiven && !pubKeyGiven) {
-		return nil, ErrSymAsym
-	}
-
 	filter := Filter{
 		PoW:      crit.MinPow,
 		Messages: make(map[common.Hash]*ReceivedMessage),
 		AllowP2P: crit.AllowP2P,
-	}
-
-	if len(crit.Sig) > 0 {
-		filter.Src = crypto.ToECDSAPub(crit.Sig)
-		if !ValidatePublicKey(filter.Src) {
-			return nil, ErrInvalidSigningPubKey
-		}
 	}
 
 	for i, bt := range crit.Topics {
@@ -365,28 +226,8 @@ func (api *PublicWhisperAPI) Messages(ctx context.Context, crit Criteria) (*rpc.
 		filter.Topics = append(filter.Topics, bt[:])
 	}
 
-	// listen for message that are encrypted with the given symmetric key
-	if symKeyGiven {
-		if len(filter.Topics) == 0 {
-			return nil, ErrNoTopics
-		}
-		key, err := api.w.GetSymKey(crit.SymKeyID)
-		if err != nil {
-			return nil, err
-		}
-		if !validateDataIntegrity(key, aesKeyLength) {
-			return nil, ErrInvalidSymmetricKey
-		}
-		filter.KeySym = key
-		filter.SymKeyHash = crypto.Keccak256Hash(filter.KeySym)
-	}
-
-	// listen for messages that are encrypted with the given public key
-	if pubKeyGiven {
-		filter.KeyAsym, err = api.w.GetPrivateKey(crit.PrivateKeyID)
-		if err != nil || filter.KeyAsym == nil {
-			return nil, ErrInvalidPublicKey
-		}
+	if len(filter.Topics) == 0 {
+		return nil, ErrNoTopics
 	}
 
 	id, err := api.w.Subscribe(&filter)
@@ -428,7 +269,6 @@ func (api *PublicWhisperAPI) Messages(ctx context.Context, crit Criteria) (*rpc.
 
 // Message is the RPC representation of a whisper message.
 type Message struct {
-	Sig       []byte    `json:"sig,omitempty"`
 	TTL       uint32    `json:"ttl"`
 	Timestamp uint32    `json:"timestamp"`
 	Topic     TopicType `json:"topic"`
@@ -440,7 +280,6 @@ type Message struct {
 }
 
 type messageOverride struct {
-	Sig     hexutil.Bytes
 	Payload hexutil.Bytes
 	Padding hexutil.Bytes
 	Hash    hexutil.Bytes
@@ -457,20 +296,6 @@ func ToWhisperMessage(message *ReceivedMessage) *Message {
 		PoW:       message.PoW,
 		Hash:      message.EnvelopeHash.Bytes(),
 		Topic:     message.Topic,
-	}
-
-	if message.Dst != nil {
-		b := crypto.FromECDSAPub(message.Dst)
-		if b != nil {
-			msg.Dst = b
-		}
-	}
-
-	if isMessageSigned(message.Raw[0]) {
-		b := crypto.FromECDSAPub(message.SigToPubKey())
-		if b != nil {
-			msg.Sig = b
-		}
 	}
 
 	return &msg
@@ -519,43 +344,10 @@ func (api *PublicWhisperAPI) DeleteMessageFilter(id string) (bool, error) {
 // (new) messages that satisfy the given criteria.
 func (api *PublicWhisperAPI) NewMessageFilter(req Criteria) (string, error) {
 	var (
-		src     *ecdsa.PublicKey
-		keySym  []byte
-		keyAsym *ecdsa.PrivateKey
 		topics  [][]byte
-
-		symKeyGiven  = len(req.SymKeyID) > 0
-		asymKeyGiven = len(req.PrivateKeyID) > 0
 
 		err error
 	)
-
-	// user must specify either a symmetric or an asymmetric key
-	if (symKeyGiven && asymKeyGiven) || (!symKeyGiven && !asymKeyGiven) {
-		return "", ErrSymAsym
-	}
-
-	if len(req.Sig) > 0 {
-		src = crypto.ToECDSAPub(req.Sig)
-		if !ValidatePublicKey(src) {
-			return "", ErrInvalidSigningPubKey
-		}
-	}
-
-	if symKeyGiven {
-		if keySym, err = api.w.GetSymKey(req.SymKeyID); err != nil {
-			return "", err
-		}
-		if !validateDataIntegrity(keySym, aesKeyLength) {
-			return "", ErrInvalidSymmetricKey
-		}
-	}
-
-	if asymKeyGiven {
-		if keyAsym, err = api.w.GetPrivateKey(req.PrivateKeyID); err != nil {
-			return "", err
-		}
-	}
 
 	if len(req.Topics) > 0 {
 		topics = make([][]byte, len(req.Topics))
@@ -566,9 +358,6 @@ func (api *PublicWhisperAPI) NewMessageFilter(req Criteria) (string, error) {
 	}
 
 	f := &Filter{
-		Src:      src,
-		KeySym:   keySym,
-		KeyAsym:  keyAsym,
 		PoW:      req.MinPow,
 		AllowP2P: req.AllowP2P,
 		Topics:   topics,
