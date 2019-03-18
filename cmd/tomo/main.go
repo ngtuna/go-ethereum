@@ -70,6 +70,7 @@ var (
 		//utils.EthashDatasetsInMemoryFlag,
 		//utils.EthashDatasetsOnDiskFlag,
 		utils.TomoXEnabledFlag,
+		utils.TomoXDataDirFlag,
 		utils.TxPoolNoLocalsFlag,
 		utils.TxPoolJournalFlag,
 		utils.TxPoolRejournalFlag,
