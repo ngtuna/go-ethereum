@@ -2,7 +2,6 @@ package tomox
 
 import (
 	"bytes"
-	"fmt"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -22,32 +21,32 @@ type SignatureRecord struct {
 	S string `json:"S" bson:"S"`
 }
 
-// OrderItem : info that will be store in database
-type OrderItem struct {
-	Quantity        *big.Int       `json:"quantity,omitempty"`
-	Price           *big.Int       `json:"price,omitempty"`
-	ExchangeAddress common.Address `json:"exchangeAddress,omitempty"`
-	UserAddress     common.Address `json:"userAddress,omitempty"`
-	BaseToken       common.Address `json:"baseToken,omitempty"`
-	QuoteToken      common.Address `json:"quoteToken,omitempty"`
-	Status          string         `json:"status,omitempty"`
-	Side            string         `json:"side,omitempty"`
+// Order: info that will be store in database
+type Order struct {
+	quantity        *big.Int       `json:"quantity,omitempty"`
+	price           *big.Int       `json:"price,omitempty"`
+	exchangeAddress common.Address `json:"exchangeAddress,omitempty"`
+	userAddress     common.Address `json:"userAddress,omitempty"`
+	baseToken       common.Address `json:"baseToken,omitempty"`
+	quoteToken      common.Address `json:"quoteToken,omitempty"`
+	status          string         `json:"status,omitempty"`
+	side            string         `json:"side,omitempty"`
 	Type            string         `json:"type,omitempty"`
-	Hash            common.Hash    `json:"hash,omitempty"`
-	Signature       *Signature     `json:"signature,omitempty"`
-	FilledAmount    *big.Int       `json:"filledAmount,omitempty"`
-	Nonce           *big.Int       `json:"nonce,omitempty"`
-	MakeFee         *big.Int       `json:"makeFee,omitempty"`
-	TakeFee         *big.Int       `json:"takeFee,omitempty"`
-	PairName        string         `json:"pairName,omitempty"`
-	CreatedAt       uint64         `json:"createdAt,omitempty"`
-	UpdatedAt       uint64         `json:"updatedAt,omitempty"`
-	OrderID         uint64         `json:"orderID,omitempty"`
+	hash            common.Hash    `json:"hash,omitempty"`
+	signature       *Signature     `json:"signature,omitempty"`
+	filledAmount    *big.Int       `json:"filledAmount,omitempty"`
+	nonce           *big.Int       `json:"nonce,omitempty"`
+	makeFee         *big.Int       `json:"makeFee,omitempty"`
+	takeFee         *big.Int       `json:"takeFee,omitempty"`
+	pairName        string         `json:"pairName,omitempty"`
+	createdAt       uint64         `json:"createdAt,omitempty"`
+	updatedAt       uint64         `json:"updatedAt,omitempty"`
+	orderID         uint64         `json:"orderID,omitempty"`
 	// *OrderMeta
-	NextOrder []byte `json:"-"`
-	PrevOrder []byte `json:"-"`
-	OrderList []byte `json:"-"`
-	Key       string `json:"key"`
+	nextOrder *Order     `json:"-"`
+	prevOrder *Order     `json:"-"`
+	orderList *OrderList `json:"-"`
+	key       []byte     `json:"key"`
 }
 
 type OrderItemBSON struct {
@@ -76,54 +75,27 @@ type OrderItemBSON struct {
 	Key             string           `json:"key" bson:"key"`
 }
 
-type Order struct {
-	Item *OrderItem
-	Key  []byte `json:"orderID"`
+func (o *Order) NextOrder() *Order {
+	return o.nextOrder
 }
 
-func (order *Order) String() string {
-
-	return fmt.Sprintf("orderID : %s, price: %s, quantity :%s, relayerID: %s",
-		new(big.Int).SetBytes(order.Key), order.Item.Price, order.Item.Quantity, order.Item.ExchangeAddress.Hex())
-}
-
-func (order *Order) GetNextOrder(orderList *OrderList) *Order {
-	nextOrder := orderList.GetOrder(order.Item.NextOrder)
-
-	return nextOrder
-}
-
-func (order *Order) GetPrevOrder(orderList *OrderList) *Order {
-	prevOrder := orderList.GetOrder(order.Item.PrevOrder)
-
-	return prevOrder
+func (o *Order) PrevOrder() *Order {
+	return o.prevOrder
 }
 
 // NewOrder : create new order with quote ( can be ethereum address )
-func NewOrder(orderItem *OrderItem, orderList []byte) *Order {
-	key := GetKeyFromBig(new(big.Int).SetUint64(orderItem.OrderID))
-	orderItem.NextOrder = EmptyKey()
-	orderItem.PrevOrder = EmptyKey()
-	orderItem.OrderList = orderList
-	// key should be Hash for compatible with smart contract
-	order := &Order{
-		Key:  key,
-		Item: orderItem,
-	}
-
+func NewOrder(order *Order, orderList *OrderList) *Order {
+	order.key = GetKeyFromBig(new(big.Int).SetUint64(order.orderID))
+	order.orderList = orderList
 	return order
 }
 
-// UpdateQuantity : update quantity of the order
-func (order *Order) UpdateQuantity(orderList *OrderList, newQuantity *big.Int, newTimestamp uint64) {
-	if newQuantity.Cmp(order.Item.Quantity) > 0 && !bytes.Equal(orderList.Item.TailOrder, order.Key) {
-		orderList.MoveToTail(order)
+func (o *Order) UpdateQuantity(newQuantity *big.Int, newTimestamp uint64) {
+	if newQuantity.Cmp(o.quantity) > 0 && o.orderList.Tail() != o {
+		o.orderList.MoveToTail(o)
 	}
-	// update volume and modified timestamp
-	orderList.Item.Volume = Sub(orderList.Item.Volume, Sub(order.Item.Quantity, newQuantity))
-	order.Item.UpdatedAt = newTimestamp
-	order.Item.Quantity = CloneBigInt(newQuantity)
-	log.Debug("QUANTITY", order.Item.Quantity.String())
-	orderList.SaveOrder(order)
-	orderList.Save()
+	o.orderList.volume = o.orderList.volume.Sub(o.quantity.Sub(newQuantity))
+	log.Debug("Updated quantity", "old quantity", o.quantity, "new quantity", newQuantity)
+	o.updatedAt = newTimestamp
+	o.quantity = newQuantity
 }
