@@ -1,7 +1,6 @@
 package tomox
 
 import (
-	"bytes"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -46,10 +45,9 @@ type Order struct {
 	nextOrder *Order     `json:"-"`
 	prevOrder *Order     `json:"-"`
 	orderList *OrderList `json:"-"`
-	key       []byte     `json:"key"`
 }
 
-type OrderItemBSON struct {
+type OrderBSON struct {
 	Quantity        string           `json:"quantity,omitempty" bson:"quantity"`
 	Price           string           `json:"price,omitempty" bson:"price"`
 	ExchangeAddress string           `json:"exchangeAddress,omitempty" bson:"exchangeAddress"`
@@ -72,7 +70,6 @@ type OrderItemBSON struct {
 	NextOrder       string           `json:"nextOrder,omitempty" bson:"nextOrder"`
 	PrevOrder       string           `json:"prevOrder,omitempty" bson:"prevOrder"`
 	OrderList       string           `json:"orderList,omitempty" bson:"orderList"`
-	Key             string           `json:"key" bson:"key"`
 }
 
 func (o *Order) NextOrder() *Order {
@@ -85,16 +82,15 @@ func (o *Order) PrevOrder() *Order {
 
 // NewOrder : create new order with quote ( can be ethereum address )
 func NewOrder(order *Order, orderList *OrderList) *Order {
-	order.key = GetKeyFromBig(new(big.Int).SetUint64(order.orderID))
 	order.orderList = orderList
 	return order
 }
 
 func (o *Order) UpdateQuantity(newQuantity *big.Int, newTimestamp uint64) {
-	if newQuantity.Cmp(o.quantity) > 0 && o.orderList.Tail() != o {
+	if newQuantity.Cmp(o.quantity) > 0 && o.orderList.tailOrder != o {
 		o.orderList.MoveToTail(o)
 	}
-	o.orderList.volume = o.orderList.volume.Sub(o.quantity.Sub(newQuantity))
+	o.orderList.volume = Sub(o.orderList.volume, Sub(o.quantity, newQuantity))
 	log.Debug("Updated quantity", "old quantity", o.quantity, "new quantity", newQuantity)
 	o.updatedAt = newTimestamp
 	o.quantity = newQuantity

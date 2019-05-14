@@ -7,16 +7,14 @@ import (
 func EncodeBytesItem(val interface{}) ([]byte, error) {
 
 	switch val.(type) {
-	case *Item:
-		return rlp.EncodeToBytes(val.(*Item))
-	case *OrderItem:
-		return rlp.EncodeToBytes(val.(*OrderItem))
-	case *OrderListItem:
-		return rlp.EncodeToBytes(val.(*OrderListItem))
-	case *OrderTreeItem:
-		return rlp.EncodeToBytes(val.(*OrderTreeItem))
-	case *OrderBookItem:
-		return rlp.EncodeToBytes(val.(*OrderBookItem))
+	case *Order:
+		return rlp.EncodeToBytes(val.(*Order))
+	case *OrderList:
+		return rlp.EncodeToBytes(val.(*OrderList))
+	case *OrderTree:
+		return rlp.EncodeToBytes(val.(*OrderTree))
+	case *OrderBook:
+		return rlp.EncodeToBytes(val.(*OrderBook))
 	default:
 		return rlp.EncodeToBytes(val)
 	}
@@ -25,16 +23,14 @@ func EncodeBytesItem(val interface{}) ([]byte, error) {
 func DecodeBytesItem(bytes []byte, val interface{}) error {
 
 	switch val.(type) {
-	case *Item:
-		return rlp.DecodeBytes(bytes, val.(*Item))
-	case *OrderItem:
-		return rlp.DecodeBytes(bytes, val.(*OrderItem))
-	case *OrderListItem:
-		return rlp.DecodeBytes(bytes, val.(*OrderListItem))
-	case *OrderTreeItem:
-		return rlp.DecodeBytes(bytes, val.(*OrderTreeItem))
-	case *OrderBookItem:
-		return rlp.DecodeBytes(bytes, val.(*OrderBookItem))
+	case *Order:
+		return rlp.DecodeBytes(bytes, val.(*Order))
+	case *OrderList:
+		return rlp.DecodeBytes(bytes, val.(*OrderList))
+	case *OrderTree:
+		return rlp.DecodeBytes(bytes, val.(*OrderTree))
+	case *OrderBook:
+		return rlp.DecodeBytes(bytes, val.(*OrderBook))
 	default:
 		return rlp.DecodeBytes(bytes, val)
 	}
