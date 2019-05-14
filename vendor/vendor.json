@@ -45,6 +45,12 @@
 			"revisionTime": "2017-02-15T19:58:14Z"
 		},
 		{
+			"checksumSHA1": "ihvwS+x4wnGgEmBB86973Xpdgo0=",
+			"path": "github.com/HuKeping/rbtree",
+			"revision": "0a7018020338cfd53ae43c6fa0a6a1a1ae216714",
+			"revisionTime": "2018-01-31T13:57:37Z"
+		},
+		{
 			"checksumSHA1": "QC55lHNOv1+UAL2xtIHw17MJ8J8=",
 			"path": "github.com/StackExchange/wmi",
 			"revision": "5d049714c4a64225c3c79a7cf7d02f7fb5b96338",
@@ -103,6 +109,30 @@
 			"path": "github.com/elastic/gosigar/sys/windows",
 			"revision": "a3814ce5008e612a0c6d027608b54e1d0d9a5613",
 			"revisionTime": "2018-01-22T22:25:45Z"
+		},
+		{
+			"checksumSHA1": "IlDHv+GrkfH+xp1pdKzOqws1sLY=",
+			"path": "github.com/emirpasic/gods/containers",
+			"revision": "729073a73ce2057955fafa2a8f0ac62b99e950c9",
+			"revisionTime": "2019-01-24T12:07:04Z"
+		},
+		{
+			"checksumSHA1": "EMOp3CuX8cfFbxn00GMEDOajyEQ=",
+			"path": "github.com/emirpasic/gods/trees",
+			"revision": "729073a73ce2057955fafa2a8f0ac62b99e950c9",
+			"revisionTime": "2019-01-24T12:07:04Z"
+		},
+		{
+			"checksumSHA1": "TzlxpoKlJhzYrtQ8Ax4lmJsEDWc=",
+			"path": "github.com/emirpasic/gods/trees/redblacktree",
+			"revision": "729073a73ce2057955fafa2a8f0ac62b99e950c9",
+			"revisionTime": "2019-01-24T12:07:04Z"
+		},
+		{
+			"checksumSHA1": "MlzoSungdUXIAmRdJ85lDQLW9OQ=",
+			"path": "github.com/emirpasic/gods/utils",
+			"revision": "729073a73ce2057955fafa2a8f0ac62b99e950c9",
+			"revisionTime": "2019-01-24T12:07:04Z"
 		},
 		{
 			"checksumSHA1": "31g2Df8m5bWEOg3UE6YJVQpSlWY=",
@@ -392,6 +422,12 @@
 			"path": "github.com/mattn/go-runewidth",
 			"revision": "14207d285c6c197daabb5c9793d63e7af9ab2d50",
 			"revisionTime": "2017-02-01T02:35:40Z"
+		},
+		{
+			"checksumSHA1": "Vi5/0kOegmneSUmWS0Nnu833UtY=",
+			"path": "github.com/maurodelazeri/orderbook/extend",
+			"revision": "345e2c38a5a35845b51aa872143c5702e1ea537e",
+			"revisionTime": "2018-09-04T10:43:58Z"
 		},
 		{
 			"checksumSHA1": "L3leymg2RT8hFl5uL+5KP/LpBkg=",
@@ -1030,5 +1066,5 @@
 			"revisionTime": "2018-11-15T11:05:04Z"
 		}
 	],
-	"rootPath": "github.com/ngtuna/tomochain"
+	"rootPath": "github.com/ethereum/go-ethereum"
 }
