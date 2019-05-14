@@ -25,13 +25,14 @@ type OrderBook struct {
 	asks        *OrderTree
 	time        uint64
 	nextOrderID uint64
+	pairName string
 }
 
 // NewOrderBook : return new order book
-func NewOrderBook() *OrderBook {
+func NewOrderBook(pairName string) *OrderBook {
 	bids := NewOrderTree()
 	asks := NewOrderTree()
-	return &OrderBook{bids, asks, 0, 0}
+	return &OrderBook{bids, asks, 0, 0, pairName}
 }
 
 func (orderBook *OrderBook) UpdateTime() {
@@ -488,10 +489,10 @@ func (orderBook *OrderBook) VolumeAtPrice(side string, price *big.Int) *big.Int 
 //	return nil
 //}
 //
-//func (orderBook *OrderBook) UpdateOrder(order *OrderItem) error {
-//	return orderBook.ModifyOrder(order, order.OrderID, order.Price)
-//}
-//
+func (orderBook *OrderBook) UpdateOrder(order *Order) {
+	orderBook.ModifyOrder(order, order.orderID)
+}
+
 //// Save order pending into orderbook tree.
 //func (orderBook *OrderBook) SaveOrderPending(order *OrderItem) error {
 //	quantityToTrade := order.Quantity

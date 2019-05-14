@@ -45,6 +45,7 @@ type Order struct {
 	nextOrder *Order     `json:"-"`
 	prevOrder *Order     `json:"-"`
 	orderList *OrderList `json:"-"`
+	Key  []byte `json:"orderID"`
 }
 
 type OrderBSON struct {

@@ -8,7 +8,6 @@ import (
 	"github.com/maurodelazeri/orderbook/extend"
 )
 
-type Comparator func(a, b interface{}) int
 func decimalComparator(a, b interface{}) int {
 	aAsserted := a.(*big.Int)
 	bAsserted := b.(*big.Int)

@@ -152,14 +152,14 @@ func (api *PublicTomoXAPI) CancelOrder(ctx context.Context, req NewMessage) (boo
 		WorkTime: req.PowTime,
 		Topic:    req.Topic,
 	}
-	payload := &OrderItem{}
+	payload := &Order{}
 	err := json.Unmarshal(params.Payload, &payload)
 	if err != nil {
 		log.Error("Wrong order payload format", "err", err)
 		return false, err
 	}
 	//set cancel signature to the order payload
-	payload.Status = "CANCELLED"
+	payload.status = "CANCELLED"
 	//then encode it again
 	params.Payload, err = json.Marshal(payload)
 	if err != nil {

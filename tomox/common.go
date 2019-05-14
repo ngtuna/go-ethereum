@@ -6,7 +6,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 )
-
 type Comparator func(a, b []byte) int
 type EncodeToBytes func(interface{}) ([]byte, error)
 type DecodeBytes func([]byte, interface{}) error
