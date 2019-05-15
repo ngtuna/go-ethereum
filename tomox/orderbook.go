@@ -20,12 +20,13 @@ const (
 	// as sequential id
 	SlotSegment = common.AddressLength
 )
+
 type OrderBook struct {
 	bids        *OrderTree
 	asks        *OrderTree
 	time        uint64
 	nextOrderID uint64
-	pairName string
+	pairName    string
 }
 
 // NewOrderBook : return new order book
@@ -66,16 +67,16 @@ func (orderBook *OrderBook) ProcessMarketOrder(quote *Order, verbose bool) []map
 	side := quote.Side
 	var new_trades []map[string]string
 
-	if side == "bid" {
+	if side == Bid {
 		for quantity_to_trade.Cmp(Zero()) > 0 && orderBook.asks.Length() > 0 {
 			best_price_asks := orderBook.asks.MinPriceList()
-			quantity_to_trade, new_trades = orderBook.ProcessOrderList("ask", best_price_asks, quantity_to_trade, quote, verbose)
+			quantity_to_trade, new_trades = orderBook.ProcessOrderList(Ask, best_price_asks, quantity_to_trade, quote, verbose)
 			trades = append(trades, new_trades...)
 		}
-	} else if side == "ask" {
+	} else if side == Ask {
 		for quantity_to_trade.Cmp(Zero()) > 0 && orderBook.bids.Length() > 0 {
 			best_price_bids := orderBook.bids.MaxPriceList()
-			quantity_to_trade, new_trades = orderBook.ProcessOrderList("bid", best_price_bids, quantity_to_trade, quote, verbose)
+			quantity_to_trade, new_trades = orderBook.ProcessOrderList(Bid, best_price_bids, quantity_to_trade, quote, verbose)
 			trades = append(trades, new_trades...)
 		}
 	}
@@ -91,11 +92,11 @@ func (orderBook *OrderBook) ProcessLimitOrder(quote *Order, verbose bool) ([]map
 
 	order_in_book := &Order{}
 
-	if side == "bid" {
+	if side == Bid {
 		minPrice := orderBook.asks.MinPrice()
 		for quantity_to_trade.Cmp(Zero()) > 0 && orderBook.asks.Length() > 0 && price.Cmp(minPrice) >= 0 {
 			best_price_asks := orderBook.asks.MinPriceList()
-			quantity_to_trade, new_trades = orderBook.ProcessOrderList("ask", best_price_asks, quantity_to_trade, quote, verbose)
+			quantity_to_trade, new_trades = orderBook.ProcessOrderList(Ask, best_price_asks, quantity_to_trade, quote, verbose)
 			trades = append(trades, new_trades...)
 			minPrice = orderBook.asks.MinPrice()
 		}
@@ -107,11 +108,11 @@ func (orderBook *OrderBook) ProcessLimitOrder(quote *Order, verbose bool) ([]map
 			order_in_book = quote
 		}
 
-	} else if side == "ask" {
+	} else if side == Ask {
 		maxPrice := orderBook.bids.MaxPrice()
 		for quantity_to_trade.Cmp(Zero()) > 0 && orderBook.bids.Length() > 0 && price.Cmp(maxPrice) <= 0 {
 			best_price_bids := orderBook.bids.MaxPriceList()
-			quantity_to_trade, new_trades = orderBook.ProcessOrderList("bid", best_price_bids, quantity_to_trade, quote, verbose)
+			quantity_to_trade, new_trades = orderBook.ProcessOrderList(Bid, best_price_bids, quantity_to_trade, quote, verbose)
 			trades = append(trades, new_trades...)
 			maxPrice = orderBook.bids.MaxPrice()
 		}
@@ -161,7 +162,7 @@ func (orderBook *OrderBook) ProcessOrderList(side string, orderList *OrderList, 
 			quantityToTrade = Zero()
 		} else if quantityToTrade.Cmp(headOrder.Quantity) == 0 {
 			tradedQuantity = quantityToTrade
-			if side == "bid" {
+			if side == Bid {
 				orderBook.bids.RemoveOrderById(strconv.FormatUint(headOrder.OrderID, 10))
 			} else {
 				orderBook.asks.RemoveOrderById(strconv.FormatUint(headOrder.OrderID, 10))
@@ -170,7 +171,7 @@ func (orderBook *OrderBook) ProcessOrderList(side string, orderList *OrderList, 
 
 		} else {
 			tradedQuantity = headOrder.Quantity
-			if side == "bid" {
+			if side == Bid {
 				orderBook.bids.RemoveOrderById(strconv.FormatUint(headOrder.OrderID, 10))
 			} else {
 				orderBook.asks.RemoveOrderById(strconv.FormatUint(headOrder.OrderID, 10))
@@ -206,7 +207,6 @@ func (orderBook *OrderBook) CancelOrder(order *Order) {
 		}
 	}
 }
-
 
 func (orderBook *OrderBook) ModifyOrder(quoteUpdate *Order, orderId uint64) {
 	orderBook.UpdateTime()
