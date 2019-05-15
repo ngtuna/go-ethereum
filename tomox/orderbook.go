@@ -62,8 +62,8 @@ func (orderBook *OrderBook) WorstAsk() (value *big.Int) {
 
 func (orderBook *OrderBook) ProcessMarketOrder(quote *Order, verbose bool) []map[string]string {
 	var trades []map[string]string
-	quantity_to_trade := quote.quantity
-	side := quote.side
+	quantity_to_trade := quote.Quantity
+	side := quote.Side
 	var new_trades []map[string]string
 
 	if side == "bid" {
@@ -84,9 +84,9 @@ func (orderBook *OrderBook) ProcessMarketOrder(quote *Order, verbose bool) []map
 
 func (orderBook *OrderBook) ProcessLimitOrder(quote *Order, verbose bool) ([]map[string]string, *Order) {
 	var trades []map[string]string
-	quantity_to_trade := quote.quantity
-	side := quote.side
-	price := quote.price
+	quantity_to_trade := quote.Quantity
+	side := quote.Side
+	price := quote.Price
 	var new_trades []map[string]string
 
 	order_in_book := &Order{}
@@ -101,8 +101,8 @@ func (orderBook *OrderBook) ProcessLimitOrder(quote *Order, verbose bool) ([]map
 		}
 
 		if quantity_to_trade.Cmp(Zero()) > 0 {
-			quote.orderID = orderBook.nextOrderID
-			quote.quantity = quantity_to_trade
+			quote.OrderID = orderBook.nextOrderID
+			quote.Quantity = quantity_to_trade
 			orderBook.bids.InsertOrder(quote)
 			order_in_book = quote
 		}
@@ -117,8 +117,8 @@ func (orderBook *OrderBook) ProcessLimitOrder(quote *Order, verbose bool) ([]map
 		}
 
 		if quantity_to_trade.Cmp(Zero()) > 0 {
-			quote.orderID = orderBook.nextOrderID
-			quote.quantity = quantity_to_trade
+			quote.OrderID = orderBook.nextOrderID
+			quote.Quantity = quantity_to_trade
 			orderBook.asks.InsertOrder(quote)
 			order_in_book = quote
 		}
@@ -132,7 +132,7 @@ func (orderBook *OrderBook) ProcessOrder(quote *Order, verbose bool) ([]map[stri
 	var trades []map[string]string
 
 	orderBook.UpdateTime()
-	quote.updatedAt = orderBook.time
+	quote.UpdatedAt = orderBook.time
 	orderBook.nextOrderID++
 
 	if order_type == "market" {
@@ -149,36 +149,36 @@ func (orderBook *OrderBook) ProcessOrderList(side string, orderList *OrderList, 
 
 	for orderList.Length() > 0 && quantityToTrade.Cmp(Zero()) > 0 {
 		headOrder := orderList.HeadOrder()
-		tradedPrice := headOrder.price
+		tradedPrice := headOrder.Price
 		var newBookQuantity *big.Int
 		var tradedQuantity *big.Int
 
-		if quantityToTrade.Cmp(headOrder.quantity) < 0 {
+		if quantityToTrade.Cmp(headOrder.Quantity) < 0 {
 			tradedQuantity = quantityToTrade
 			// Do the transaction
-			newBookQuantity = Sub(headOrder.quantity, quantityToTrade)
-			headOrder.UpdateQuantity(newBookQuantity, headOrder.updatedAt)
+			newBookQuantity = Sub(headOrder.Quantity, quantityToTrade)
+			headOrder.UpdateQuantity(newBookQuantity, headOrder.UpdatedAt)
 			quantityToTrade = Zero()
-		} else if quantityToTrade.Cmp(headOrder.quantity) == 0 {
+		} else if quantityToTrade.Cmp(headOrder.Quantity) == 0 {
 			tradedQuantity = quantityToTrade
 			if side == "bid" {
-				orderBook.bids.RemoveOrderById(strconv.FormatUint(headOrder.orderID, 10))
+				orderBook.bids.RemoveOrderById(strconv.FormatUint(headOrder.OrderID, 10))
 			} else {
-				orderBook.asks.RemoveOrderById(strconv.FormatUint(headOrder.orderID, 10))
+				orderBook.asks.RemoveOrderById(strconv.FormatUint(headOrder.OrderID, 10))
 			}
 			quantityToTrade = Zero()
 
 		} else {
-			tradedQuantity = headOrder.quantity
+			tradedQuantity = headOrder.Quantity
 			if side == "bid" {
-				orderBook.bids.RemoveOrderById(strconv.FormatUint(headOrder.orderID, 10))
+				orderBook.bids.RemoveOrderById(strconv.FormatUint(headOrder.OrderID, 10))
 			} else {
-				orderBook.asks.RemoveOrderById(strconv.FormatUint(headOrder.orderID, 10))
+				orderBook.asks.RemoveOrderById(strconv.FormatUint(headOrder.OrderID, 10))
 			}
 		}
 
 		if verbose {
-			log.Debug("TRADE: ", "Time", orderBook.time, "Price", tradedPrice.String(), "Quantity", tradedQuantity.String(), "TradeID", headOrder.exchangeAddress.Hex(), "Matching TradeID", quote.exchangeAddress.Hex())
+			log.Debug("TRADE: ", "Time", orderBook.time, "Price", tradedPrice.String(), "Quantity", tradedQuantity.String(), "TradeID", headOrder.ExchangeAddress.Hex(), "Matching TradeID", quote.ExchangeAddress.Hex())
 		}
 
 		transactionRecord := make(map[string]string)
@@ -194,9 +194,9 @@ func (orderBook *OrderBook) ProcessOrderList(side string, orderList *OrderList, 
 
 func (orderBook *OrderBook) CancelOrder(order *Order) {
 	orderBook.UpdateTime()
-	orderId := order.orderID
+	orderId := order.OrderID
 
-	if order.side == Bid {
+	if order.Side == Bid {
 		if orderBook.bids.OrderExist(strconv.FormatUint(orderId, 10)) {
 			orderBook.bids.RemoveOrderById(strconv.FormatUint(orderId, 10))
 		}
@@ -211,9 +211,9 @@ func (orderBook *OrderBook) CancelOrder(order *Order) {
 func (orderBook *OrderBook) ModifyOrder(quoteUpdate *Order, orderId uint64) {
 	orderBook.UpdateTime()
 
-	side := quoteUpdate.side
-	quoteUpdate.orderID = orderId
-	quoteUpdate.updatedAt = orderBook.time
+	side := quoteUpdate.Side
+	quoteUpdate.OrderID = orderId
+	quoteUpdate.UpdatedAt = orderBook.time
 
 	if side == Bid {
 		if orderBook.bids.OrderExist(strconv.FormatUint(orderId, 10)) {
@@ -490,7 +490,7 @@ func (orderBook *OrderBook) VolumeAtPrice(side string, price *big.Int) *big.Int 
 //}
 //
 func (orderBook *OrderBook) UpdateOrder(order *Order) {
-	orderBook.ModifyOrder(order, order.orderID)
+	orderBook.ModifyOrder(order, order.OrderID)
 }
 
 //// Save order pending into orderbook tree.

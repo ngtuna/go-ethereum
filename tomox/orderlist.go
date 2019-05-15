@@ -47,51 +47,51 @@ func (orderlist *OrderList) HeadOrder() *Order {
 
 func (orderlist *OrderList) AppendOrder(order *Order) {
 	if orderlist.Length() == 0 {
-		order.nextOrder = nil
-		order.prevOrder = nil
+		order.NextOrder = nil
+		order.PrevOrder = nil
 		orderlist.headOrder = order
 		orderlist.tailOrder = order
 	} else {
-		order.prevOrder = orderlist.tailOrder
-		order.nextOrder = nil
-		orderlist.tailOrder.nextOrder = order
+		order.PrevOrder = orderlist.tailOrder
+		order.NextOrder = nil
+		orderlist.tailOrder.NextOrder = order
 		orderlist.tailOrder = order
 	}
 	orderlist.length = orderlist.length + 1
-	orderlist.volume = Add(orderlist.volume, order.quantity)
+	orderlist.volume = Add(orderlist.volume, order.Quantity)
 }
 
 func (orderlist *OrderList) RemoveOrder(order *Order) {
-	orderlist.volume = Sub(orderlist.volume, order.quantity)
+	orderlist.volume = Sub(orderlist.volume, order.Quantity)
 	orderlist.length = orderlist.length - 1
 	if orderlist.length == 0 {
 		return
 	}
 
-	nextOrder := order.nextOrder
-	prevOrder := order.prevOrder
+	nextOrder := order.NextOrder
+	prevOrder := order.PrevOrder
 
 	if nextOrder != nil && prevOrder != nil {
-		nextOrder.prevOrder = prevOrder
-		prevOrder.nextOrder = nextOrder
+		nextOrder.PrevOrder = prevOrder
+		prevOrder.NextOrder = nextOrder
 	} else if nextOrder != nil {
-		nextOrder.prevOrder = nil
+		nextOrder.PrevOrder = nil
 		orderlist.headOrder = nextOrder
 	} else if prevOrder != nil {
-		prevOrder.nextOrder = nil
+		prevOrder.NextOrder = nil
 		orderlist.tailOrder = prevOrder
 	}
 }
 
 func (orderlist *OrderList) MoveToTail(order *Order) {
-	if order.prevOrder != nil { // This Order is not the first Order in the OrderList
-		order.prevOrder.nextOrder = order.nextOrder // Link the previous Order to the next Order, then move the Order to tail
+	if order.PrevOrder != nil { // This Order is not the first Order in the OrderList
+		order.PrevOrder.NextOrder = order.NextOrder // Link the previous Order to the next Order, then move the Order to tail
 	} else { // This Order is the first Order in the OrderList
-		orderlist.headOrder = order.nextOrder // Make next order the first
+		orderlist.headOrder = order.NextOrder // Make next order the first
 	}
-	order.nextOrder.prevOrder = order.prevOrder
+	order.NextOrder.PrevOrder = order.PrevOrder
 
 	// Move Order to the last position. Link up the previous last position Order.
-	orderlist.tailOrder.nextOrder = order
+	orderlist.tailOrder.NextOrder = order
 	orderlist.tailOrder = order
 }

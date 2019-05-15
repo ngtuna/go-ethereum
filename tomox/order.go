@@ -22,29 +22,29 @@ type SignatureRecord struct {
 
 // Order: info that will be store in database
 type Order struct {
-	quantity        *big.Int       `json:"quantity,omitempty"`
-	price           *big.Int       `json:"price,omitempty"`
-	exchangeAddress common.Address `json:"exchangeAddress,omitempty"`
-	userAddress     common.Address `json:"userAddress,omitempty"`
-	baseToken       common.Address `json:"baseToken,omitempty"`
-	quoteToken      common.Address `json:"quoteToken,omitempty"`
-	status          string         `json:"status,omitempty"`
-	side            string         `json:"side,omitempty"`
+	Quantity        *big.Int       `json:"quantity,omitempty"`
+	Price           *big.Int       `json:"price,omitempty"`
+	ExchangeAddress common.Address `json:"exchangeAddress,omitempty"`
+	UserAddress     common.Address `json:"userAddress,omitempty"`
+	BaseToken       common.Address `json:"baseToken,omitempty"`
+	QuoteToken      common.Address `json:"quoteToken,omitempty"`
+	Status          string         `json:"status,omitempty"`
+	Side            string         `json:"side,omitempty"`
 	Type            string         `json:"type,omitempty"`
-	hash            common.Hash    `json:"hash,omitempty"`
-	signature       *Signature     `json:"signature,omitempty"`
-	filledAmount    *big.Int       `json:"filledAmount,omitempty"`
-	nonce           *big.Int       `json:"nonce,omitempty"`
-	makeFee         *big.Int       `json:"makeFee,omitempty"`
-	takeFee         *big.Int       `json:"takeFee,omitempty"`
-	pairName        string         `json:"pairName,omitempty"`
-	createdAt       uint64         `json:"createdAt,omitempty"`
-	updatedAt       uint64         `json:"updatedAt,omitempty"`
-	orderID         uint64         `json:"orderID,omitempty"`
+	Hash            common.Hash    `json:"hash,omitempty"`
+	Signature       *Signature     `json:"signature,omitempty"`
+	FilledAmount    *big.Int       `json:"filledAmount,omitempty"`
+	Nonce           *big.Int       `json:"nonce,omitempty"`
+	MakeFee         *big.Int       `json:"makeFee,omitempty"`
+	TakeFee         *big.Int       `json:"takeFee,omitempty"`
+	PairName        string         `json:"pairName,omitempty"`
+	CreatedAt       uint64         `json:"createdAt,omitempty"`
+	UpdatedAt       uint64         `json:"updatedAt,omitempty"`
+	OrderID         uint64         `json:"orderID,omitempty"`
 	// *OrderMeta
-	nextOrder *Order     `json:"-"`
-	prevOrder *Order     `json:"-"`
-	orderList *OrderList `json:"-"`
+	NextOrder *Order     `json:"-"`
+	PrevOrder *Order     `json:"-"`
+	OrderList *OrderList `json:"-"`
 	Key  []byte `json:"orderID"`
 }
 
@@ -73,26 +73,18 @@ type OrderBSON struct {
 	OrderList       string           `json:"orderList,omitempty" bson:"orderList"`
 }
 
-func (o *Order) NextOrder() *Order {
-	return o.nextOrder
-}
-
-func (o *Order) PrevOrder() *Order {
-	return o.prevOrder
-}
-
 // NewOrder : create new order with quote ( can be ethereum address )
 func NewOrder(order *Order, orderList *OrderList) *Order {
-	order.orderList = orderList
+	order.OrderList = orderList
 	return order
 }
 
 func (o *Order) UpdateQuantity(newQuantity *big.Int, newTimestamp uint64) {
-	if newQuantity.Cmp(o.quantity) > 0 && o.orderList.tailOrder != o {
-		o.orderList.MoveToTail(o)
+	if newQuantity.Cmp(o.Quantity) > 0 && o.OrderList.tailOrder != o {
+		o.OrderList.MoveToTail(o)
 	}
-	o.orderList.volume = Sub(o.orderList.volume, Sub(o.quantity, newQuantity))
-	log.Debug("Updated quantity", "old quantity", o.quantity, "new quantity", newQuantity)
-	o.updatedAt = newTimestamp
-	o.quantity = newQuantity
+	o.OrderList.volume = Sub(o.OrderList.volume, Sub(o.Quantity, newQuantity))
+	log.Debug("Updated quantity", "old quantity", o.Quantity, "new quantity", newQuantity)
+	o.UpdatedAt = newTimestamp
+	o.Quantity = newQuantity
 }
