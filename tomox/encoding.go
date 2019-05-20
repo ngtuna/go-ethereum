@@ -2,6 +2,7 @@ package tomox
 
 import (
 	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/pkg/errors"
 )
 
 func EncodeBytesItem(val interface{}) ([]byte, error) {
@@ -20,19 +21,39 @@ func EncodeBytesItem(val interface{}) ([]byte, error) {
 	}
 }
 
-func DecodeBytesItem(bytes []byte, val interface{}) error {
+func DecodeBytesItem(bytes []byte, val interface{}) (interface{}, error) {
 
 	switch val.(type) {
 	case *Order:
-		return rlp.DecodeBytes(bytes, val.(*Order))
+		var out Order
+		err := rlp.DecodeBytes(bytes, out)
+		if err != nil {
+			return nil, err
+		}
+		return out, nil
 	case *OrderList:
-		return rlp.DecodeBytes(bytes, val.(*OrderList))
+		var out OrderList
+		err := rlp.DecodeBytes(bytes, out)
+		if err != nil {
+			return nil, err
+		}
+		return out, nil
 	case *OrderTree:
-		return rlp.DecodeBytes(bytes, val.(*OrderTree))
+		var out OrderTree
+		err := rlp.DecodeBytes(bytes, out)
+		if err != nil {
+			return nil, err
+		}
+		return out, nil
 	case *OrderBook:
-		return rlp.DecodeBytes(bytes, val.(*OrderBook))
+		var out OrderBook
+		err := rlp.DecodeBytes(bytes, out)
+		if err != nil {
+			return nil, err
+		}
+		return out, nil
 	default:
-		return rlp.DecodeBytes(bytes, val)
+		return nil, errors.New("type is not supported")
 	}
 
 }

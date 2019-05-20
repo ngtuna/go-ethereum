@@ -132,14 +132,14 @@ func (m *MongoDatabase) Get(key []byte, val interface{}) (interface{}, error) {
 		return nil, err
 	}
 
-	err = DecodeBytesItem(common.Hex2Bytes(i.Value), val)
+	out, err := DecodeBytesItem(common.Hex2Bytes(i.Value), val)
 
 	// has problem here
 	if err != nil {
 		return nil, err
 	}
 
-	return val, nil
+	return out, nil
 }
 
 func (m *MongoDatabase) Put(key []byte, val interface{}) error {
@@ -149,10 +149,10 @@ func (m *MongoDatabase) Put(key []byte, val interface{}) error {
 
 	var order *Order
 
-	err := DecodeBytesItem(bytesValue, order)
+	out, err := DecodeBytesItem(bytesValue, order)
 
 	if err == nil { // val is Order type
-		err = db.CommitOrder(cacheKey, order) // Put order into "orders" collection
+		err = db.CommitOrder(cacheKey, out.(*Order)) // Put order into "orders" collection
 
 		if err != nil {
 			return err
