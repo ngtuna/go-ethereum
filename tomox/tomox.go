@@ -603,6 +603,7 @@ func (tomox *TomoX) getAndCreateIfNotExisted(pairName string) (*OrderBook, error
 		key := crypto.Keccak256([]byte(strings.ToLower(pairName)))
 		ob := &OrderBook{
 			key: key,
+			db: tomox.db,
 		}
 
 		// restore orderbook from DB

@@ -273,6 +273,11 @@ func (orderBook *OrderBook) VolumeAtPrice(side string, price *big.Int) *big.Int 
 	}
 }
 
+//// commit everything by trigger db.Commit, later we can map custom encode and decode based on item
+//func (orderBook *OrderBook) Commit() error {
+//	return orderBook.db.Commit()
+//}
+
 func (orderBook *OrderBook) Save() error {
 	err := orderBook.asks.Save()
 	if err != nil {
@@ -292,11 +297,6 @@ func (orderBook *OrderBook) Save() error {
 	return orderBook.db.Put(orderBook.key, value)
 }
 
-//// commit everything by trigger db.Commit, later we can map custom encode and decode based on item
-//func (orderBook *OrderBook) Commit() error {
-//	return orderBook.db.Commit()
-//}
-
 func (orderBook *OrderBook) Restore() error {
 	val, err := orderBook.db.Get(orderBook.key, orderBook)
 	if err != nil {
@@ -304,6 +304,37 @@ func (orderBook *OrderBook) Restore() error {
 		return err
 	}
 	orderBook = val.(*OrderBook)
+	return nil
+}
+
+func (orderBook *OrderBook) UpdateOrder(order *Order) {
+	orderBook.ModifyOrder(order, order.OrderID)
+}
+
+// Save order pending into orderbook tree.
+func (orderBook *OrderBook) SaveOrderPending(order *Order) error {
+	zero := Zero()
+	orderBook.UpdateTime()
+	// if we do not use auto-increment orderid, we must set price slot to avoid conflict
+	orderBook.nextOrderID++
+
+	if order.Side == Bid {
+		if order.Quantity.Cmp(zero) > 0 {
+			order.OrderID = orderBook.nextOrderID
+			orderBook.bids.InsertOrder(order)
+		}
+	} else {
+		if order.Quantity.Cmp(zero) > 0 {
+			order.OrderID = orderBook.nextOrderID
+			orderBook.asks.InsertOrder(order)
+		}
+	}
+
+	// save changes to orderbook
+	err := orderBook.Save()
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -528,33 +559,3 @@ func (orderBook *OrderBook) Restore() error {
 //	return nil
 //}
 //
-func (orderBook *OrderBook) UpdateOrder(order *Order) {
-	orderBook.ModifyOrder(order, order.OrderID)
-}
-
-// Save order pending into orderbook tree.
-func (orderBook *OrderBook) SaveOrderPending(order *Order) error {
-	zero := Zero()
-	orderBook.UpdateTime()
-	// if we do not use auto-increment orderid, we must set price slot to avoid conflict
-	orderBook.nextOrderID++
-
-	if order.Side == Bid {
-		if order.Quantity.Cmp(zero) > 0 {
-			order.OrderID = orderBook.nextOrderID
-			orderBook.bids.InsertOrder(order)
-		}
-	} else {
-		if order.Quantity.Cmp(zero) > 0 {
-			order.OrderID = orderBook.nextOrderID
-			orderBook.asks.InsertOrder(order)
-		}
-	}
-
-	// save changes to orderbook
-	err := orderBook.Save()
-	if err != nil {
-		return err
-	}
-	return nil
-}

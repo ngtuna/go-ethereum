@@ -97,16 +97,22 @@ func (db *BatchDatabase) Get(key []byte, val interface{}) (interface{}, error) {
 	}
 
 	cacheKey := db.getCacheKey(key)
+	log.Debug("Get debug", "cacheKey", cacheKey)
 
 	if pendingItem, ok := db.pendingItems[cacheKey]; ok {
 		// we get value from the pending item
-		return pendingItem.Value, nil
-	}
-
-	if cached, ok := db.cacheItems.Get(cacheKey); ok {
-		val = cached
+		log.Debug("Get debug", "pendingItem", pendingItem, "pendingItem.Value", pendingItem.Value)
+		err := DecodeBytesItem(pendingItem.Value.([]byte), val)
+		if err != nil {
+			return nil, err
+		}
+	} else if cached, ok := db.cacheItems.Get(cacheKey); ok {
+		log.Debug("Get debug", "cached", cached)
+		err := DecodeBytesItem(cached.([]byte), val)
+		if err != nil {
+			return nil, err
+		}
 	} else {
-
 		// we can use lru for retrieving cache item, by default leveldb support get data from cache
 		// but it is raw bytes
 		bytes, err := db.db.Get(key)
@@ -114,17 +120,13 @@ func (db *BatchDatabase) Get(key []byte, val interface{}) (interface{}, error) {
 			log.Debug("Key not found", "key", key)
 			return nil, err
 		}
+		// update cache when reading
+		db.cacheItems.Add(cacheKey, bytes)
 
 		err = DecodeBytesItem(bytes, val)
-
-		// has problem here
 		if err != nil {
 			return nil, err
 		}
-
-		// update cache when reading
-		db.cacheItems.Add(cacheKey, val)
-
 	}
 
 	return val, nil
@@ -133,9 +135,8 @@ func (db *BatchDatabase) Get(key []byte, val interface{}) (interface{}, error) {
 func (db *BatchDatabase) Put(key []byte, val interface{}) error {
 
 	cacheKey := db.getCacheKey(key)
-
 	db.pendingItems[cacheKey] = &BatchItem{Value: val}
-
+	log.Debug("Put debug", "cacheKey", cacheKey, "pendingItems.Value", val)
 	if len(db.pendingItems) >= db.itemMaxPending {
 		return db.Commit()
 	}
