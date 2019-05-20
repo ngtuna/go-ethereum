@@ -238,6 +238,6 @@ func (orderTree *OrderTree) Save() error {
 		log.Error("Can't save ordertree", "value", value, "err", err)
 		return err
 	}
-	log.Debug("Save ordertree ", "key", orderTree.Key, "value", ToJSON(orderTree))
+	log.Debug("Save ordertree ", "key", orderTree.Key, "value", value, "orderTree", orderTree)
 	return orderTree.db.Put(orderTree.Key, value)
 }

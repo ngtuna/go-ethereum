@@ -95,7 +95,7 @@ func (orderList *OrderList) SaveOrder(order *Order) error {
 		log.Error("Can't save order", "value", value, "err", err)
 		return err
 	}
-	log.Debug("Save order ", "key", key, "value", ToJSON(order))
+	log.Debug("Save order ", "key", key, "value", value, "order", order)
 	return orderList.db.Put(key, value)
 }
 
@@ -118,6 +118,6 @@ func (orderList *OrderList) Save() error {
 		log.Error("Can't save orderlist", "value", value, "err", err)
 		return err
 	}
-	log.Debug("Save orderlist ", "key", orderList.Key, "value", ToJSON(orderList))
+	log.Debug("Save orderlist ", "key", orderList.Key, "value", value, "orderList", orderList)
 	return orderList.db.Put(orderList.Key, value)
 }

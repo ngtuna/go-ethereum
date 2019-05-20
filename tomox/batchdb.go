@@ -133,7 +133,6 @@ func (db *BatchDatabase) Get(key []byte, val interface{}) (interface{}, error) {
 }
 
 func (db *BatchDatabase) Put(key []byte, val interface{}) error {
-
 	cacheKey := db.getCacheKey(key)
 	db.pendingItems[cacheKey] = &BatchItem{Value: val}
 	log.Debug("Put debug", "cacheKey", cacheKey, "pendingItems.Value", val)

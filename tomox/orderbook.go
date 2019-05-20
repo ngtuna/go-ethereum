@@ -293,7 +293,7 @@ func (orderBook *OrderBook) Save() error {
 		log.Error("Can't save orderbook", "value", value, "err", err)
 		return err
 	}
-	log.Debug("Save orderbook ", "key", orderBook.key, "value", ToJSON(orderBook))
+	log.Debug("Save orderbook ", "key", orderBook.key, "value", value, "orderbook", orderBook)
 	return orderBook.db.Put(orderBook.key, value)
 }
 
