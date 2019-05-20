@@ -92,6 +92,9 @@ func (ordertree *OrderTree) PriceExist(price *big.Int) bool {
 }
 
 func (ordertree *OrderTree) OrderExist(orderId string) bool {
+	if ordertree.orderMap == nil {
+		log.Error("Ordertree ordermap is corrupted")
+	}
 	if _, ok := ordertree.orderMap[orderId]; ok {
 		return true
 	}

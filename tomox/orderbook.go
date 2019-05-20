@@ -321,11 +321,17 @@ func (orderBook *OrderBook) SaveOrderPending(order *Order) error {
 	if order.Side == Bid {
 		if order.Quantity.Cmp(zero) > 0 {
 			order.OrderID = orderBook.nextOrderID
+			if orderBook.bids == nil {
+				log.Error("orderbook bids is corrupted")
+			}
 			orderBook.bids.InsertOrder(order)
 		}
 	} else {
 		if order.Quantity.Cmp(zero) > 0 {
 			order.OrderID = orderBook.nextOrderID
+			if orderBook.asks == nil {
+				log.Error("orderbook asks is corrupted")
+			}
 			orderBook.asks.InsertOrder(order)
 		}
 	}
