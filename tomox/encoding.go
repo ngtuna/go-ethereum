@@ -26,32 +26,32 @@ func DecodeBytesItem(bytes []byte, val interface{}) (interface{}, error) {
 	switch val.(type) {
 	case *Order:
 		var out Order
-		err := rlp.DecodeBytes(bytes, out)
+		err := rlp.DecodeBytes(bytes, &out)
 		if err != nil {
 			return nil, err
 		}
-		return out, nil
+		return &out, nil
 	case *OrderList:
 		var out OrderList
-		err := rlp.DecodeBytes(bytes, out)
+		err := rlp.DecodeBytes(bytes, &out)
 		if err != nil {
 			return nil, err
 		}
-		return out, nil
+		return &out, nil
 	case *OrderTree:
 		var out OrderTree
-		err := rlp.DecodeBytes(bytes, out)
+		err := rlp.DecodeBytes(bytes, &out)
 		if err != nil {
 			return nil, err
 		}
-		return out, nil
+		return &out, nil
 	case *OrderBook:
 		var out OrderBook
-		err := rlp.DecodeBytes(bytes, out)
+		err := rlp.DecodeBytes(bytes, &out)
 		if err != nil {
 			return nil, err
 		}
-		return out, nil
+		return &out, nil
 	default:
 		return nil, errors.New("type is not supported")
 	}
