@@ -304,6 +304,7 @@ func (orderBook *OrderBook) Restore() error {
 		return err
 	}
 	orderBook = val.(*OrderBook)
+	log.Debug("orderbook restored", "orderbook", orderBook)
 	return nil
 }
 
