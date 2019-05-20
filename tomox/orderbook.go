@@ -297,15 +297,16 @@ func (orderBook *OrderBook) Save() error {
 	return orderBook.db.Put(orderBook.key, value)
 }
 
-func (orderBook *OrderBook) Restore() error {
-	val, err := orderBook.db.Get(orderBook.key, orderBook)
+func Restore(key []byte, db TomoXDao) (*OrderBook, error) {
+	orderBook := &OrderBook{}
+	val, err := db.Get(key, orderBook)
 	if err != nil {
 		log.Error("Can't restore orderbook", "err", err)
-		return err
+		return nil, err
 	}
 	orderBook = val.(*OrderBook)
-	log.Debug("orderbook restored", "orderbook", orderBook)
-	return nil
+	log.Debug("orderbook restored", "orderbook", orderBook, "val", val, "val.(*OrderBook)", val.(*OrderBook))
+	return orderBook, nil
 }
 
 func (orderBook *OrderBook) UpdateOrder(order *Order) {

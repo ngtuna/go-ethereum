@@ -595,13 +595,8 @@ func (tomox *TomoX) getAndCreateIfNotExisted(pairName string) (*OrderBook, error
 		tomox.Orderbooks[name] = ob
 	} else {
 		key := crypto.Keccak256([]byte(strings.ToLower(pairName)))
-		ob := &OrderBook{
-			key: key,
-			db: tomox.db,
-		}
-
 		// restore orderbook from DB
-		err := ob.Restore()
+		ob, err := Restore(key, tomox.db)
 		if err != nil {
 			return nil, err
 		}
