@@ -101,7 +101,7 @@ func (db *BatchDatabase) Get(key []byte, val interface{}) (interface{}, error) {
 
 	if pendingItem, ok := db.pendingItems[cacheKey]; ok {
 		// we get value from the pending item
-		log.Debug("Get debug", "pendingItem", pendingItem, "pendingItem.Value", pendingItem.Value)
+		log.Debug("Get debug", "pendingItem", pendingItem, "pendingItem.Value.([]byte)", pendingItem.Value.([]byte))
 		err := DecodeBytesItem(pendingItem.Value.([]byte), val)
 		if err != nil {
 			return nil, err

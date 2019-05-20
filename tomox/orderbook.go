@@ -297,9 +297,8 @@ func (orderBook *OrderBook) Save() error {
 	return orderBook.db.Put(orderBook.key, value)
 }
 
-func Restore(key []byte, db TomoXDao) (*OrderBook, error) {
-	orderBook := &OrderBook{}
-	val, err := db.Get(key, orderBook)
+func (orderBook *OrderBook) Restore() (*OrderBook, error) {
+	val, err := orderBook.db.Get(orderBook.key, orderBook)
 	if err != nil {
 		log.Error("Can't restore orderbook", "err", err)
 		return nil, err
