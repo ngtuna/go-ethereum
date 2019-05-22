@@ -46,7 +46,7 @@ type Order struct {
 	PrevOrder *Order     `json:"-"`
 	OrderList *OrderList `json:"-"`
 	Key       []byte
-	db        TomoXDao
+	Db        TomoXDao
 }
 
 type OrderBSON struct {
@@ -79,10 +79,10 @@ func NewOrder(order *Order, orderList *OrderList) *Order {
 }
 
 func (o *Order) UpdateQuantity(newQuantity *big.Int, newTimestamp uint64) {
-	if newQuantity.Cmp(o.Quantity) > 0 && o.OrderList.tailOrder != o {
+	if newQuantity.Cmp(o.Quantity) > 0 && o.OrderList.TOrder != o {
 		o.OrderList.MoveToTail(o)
 	}
-	o.OrderList.volume = Sub(o.OrderList.volume, Sub(o.Quantity, newQuantity))
+	o.OrderList.Volume = Sub(o.OrderList.Volume, Sub(o.Quantity, newQuantity))
 	log.Debug("Updated quantity", "old quantity", o.Quantity, "new quantity", newQuantity)
 	o.UpdatedAt = newTimestamp
 	o.Quantity = newQuantity

@@ -24,14 +24,14 @@ const (
 )
 
 type OrderBook struct {
-	db          TomoXDao
-	bids        *OrderTree
-	asks        *OrderTree
-	time        uint64
-	nextOrderID uint64
-	pairName    string
-	key         []byte
-	slot        *big.Int
+	Db          TomoXDao
+	Bids        *OrderTree
+	Asks        *OrderTree
+	Time        uint64
+	NextOrderID uint64
+	PairName    string
+	Key         []byte
+	Slot        *big.Int
 }
 
 // NewOrderBook : return new order book
@@ -54,39 +54,39 @@ func NewOrderBook(pairName string, db TomoXDao) *OrderBook {
 	asks := NewOrderTree(asksKey, db)
 
 	return &OrderBook{
-		bids:        bids,
-		asks:        asks,
-		time:        0,
-		nextOrderID: 0,
-		pairName:    strings.ToLower(pairName),
-		db:          db,
-		key:         key,
-		slot:        slot,
+		Bids:        bids,
+		Asks:        asks,
+		Time:        0,
+		NextOrderID: 0,
+		PairName:    strings.ToLower(pairName),
+		Db:          db,
+		Key:         key,
+		Slot:        slot,
 	}
 }
 
 func (orderBook *OrderBook) UpdateTime() {
 	timestamp := uint64(time.Now().Unix())
-	orderBook.time = timestamp
+	orderBook.Time = timestamp
 }
 
 func (orderBook *OrderBook) BestBid() (value *big.Int) {
-	value = orderBook.bids.MaxPrice()
+	value = orderBook.Bids.MaxPrice()
 	return
 }
 
 func (orderBook *OrderBook) BestAsk() (value *big.Int) {
-	value = orderBook.asks.MinPrice()
+	value = orderBook.Asks.MinPrice()
 	return
 }
 
 func (orderBook *OrderBook) WorstBid() (value *big.Int) {
-	value = orderBook.bids.MinPrice()
+	value = orderBook.Bids.MinPrice()
 	return
 }
 
 func (orderBook *OrderBook) WorstAsk() (value *big.Int) {
-	value = orderBook.asks.MaxPrice()
+	value = orderBook.Asks.MaxPrice()
 	return
 }
 
@@ -97,14 +97,14 @@ func (orderBook *OrderBook) ProcessMarketOrder(quote *Order, verbose bool) []map
 	var new_trades []map[string]string
 
 	if side == Bid {
-		for quantity_to_trade.Cmp(Zero()) > 0 && orderBook.asks.Length() > 0 {
-			best_price_asks := orderBook.asks.MinPriceList()
+		for quantity_to_trade.Cmp(Zero()) > 0 && orderBook.Asks.Length() > 0 {
+			best_price_asks := orderBook.Asks.MinPriceList()
 			quantity_to_trade, new_trades = orderBook.ProcessOrderList(Ask, best_price_asks, quantity_to_trade, quote, verbose)
 			trades = append(trades, new_trades...)
 		}
 	} else if side == Ask {
-		for quantity_to_trade.Cmp(Zero()) > 0 && orderBook.bids.Length() > 0 {
-			best_price_bids := orderBook.bids.MaxPriceList()
+		for quantity_to_trade.Cmp(Zero()) > 0 && orderBook.Bids.Length() > 0 {
+			best_price_bids := orderBook.Bids.MaxPriceList()
 			quantity_to_trade, new_trades = orderBook.ProcessOrderList(Bid, best_price_bids, quantity_to_trade, quote, verbose)
 			trades = append(trades, new_trades...)
 		}
@@ -122,34 +122,34 @@ func (orderBook *OrderBook) ProcessLimitOrder(quote *Order, verbose bool) ([]map
 	order_in_book := &Order{}
 
 	if side == Bid {
-		minPrice := orderBook.asks.MinPrice()
-		for quantity_to_trade.Cmp(Zero()) > 0 && orderBook.asks.Length() > 0 && price.Cmp(minPrice) >= 0 {
-			best_price_asks := orderBook.asks.MinPriceList()
+		minPrice := orderBook.Asks.MinPrice()
+		for quantity_to_trade.Cmp(Zero()) > 0 && orderBook.Asks.Length() > 0 && price.Cmp(minPrice) >= 0 {
+			best_price_asks := orderBook.Asks.MinPriceList()
 			quantity_to_trade, new_trades = orderBook.ProcessOrderList(Ask, best_price_asks, quantity_to_trade, quote, verbose)
 			trades = append(trades, new_trades...)
-			minPrice = orderBook.asks.MinPrice()
+			minPrice = orderBook.Asks.MinPrice()
 		}
 
 		if quantity_to_trade.Cmp(Zero()) > 0 {
-			quote.OrderID = orderBook.nextOrderID
+			quote.OrderID = orderBook.NextOrderID
 			quote.Quantity = quantity_to_trade
-			orderBook.bids.InsertOrder(quote)
+			orderBook.Bids.InsertOrder(quote)
 			order_in_book = quote
 		}
 
 	} else if side == Ask {
-		maxPrice := orderBook.bids.MaxPrice()
-		for quantity_to_trade.Cmp(Zero()) > 0 && orderBook.bids.Length() > 0 && price.Cmp(maxPrice) <= 0 {
-			best_price_bids := orderBook.bids.MaxPriceList()
+		maxPrice := orderBook.Bids.MaxPrice()
+		for quantity_to_trade.Cmp(Zero()) > 0 && orderBook.Bids.Length() > 0 && price.Cmp(maxPrice) <= 0 {
+			best_price_bids := orderBook.Bids.MaxPriceList()
 			quantity_to_trade, new_trades = orderBook.ProcessOrderList(Bid, best_price_bids, quantity_to_trade, quote, verbose)
 			trades = append(trades, new_trades...)
-			maxPrice = orderBook.bids.MaxPrice()
+			maxPrice = orderBook.Bids.MaxPrice()
 		}
 
 		if quantity_to_trade.Cmp(Zero()) > 0 {
-			quote.OrderID = orderBook.nextOrderID
+			quote.OrderID = orderBook.NextOrderID
 			quote.Quantity = quantity_to_trade
-			orderBook.asks.InsertOrder(quote)
+			orderBook.Asks.InsertOrder(quote)
 			order_in_book = quote
 		}
 	}
@@ -162,8 +162,8 @@ func (orderBook *OrderBook) ProcessOrder(quote *Order, verbose bool) ([]map[stri
 	var trades []map[string]string
 
 	orderBook.UpdateTime()
-	quote.UpdatedAt = orderBook.time
-	orderBook.nextOrderID++
+	quote.UpdatedAt = orderBook.Time
+	orderBook.NextOrderID++
 
 	if order_type == "market" {
 		trades = orderBook.ProcessMarketOrder(quote, verbose)
@@ -192,30 +192,30 @@ func (orderBook *OrderBook) ProcessOrderList(side string, orderList *OrderList, 
 		} else if quantityToTrade.Cmp(headOrder.Quantity) == 0 {
 			tradedQuantity = quantityToTrade
 			if side == Bid {
-				orderBook.bids.RemoveOrderById(strconv.FormatUint(headOrder.OrderID, 10))
+				orderBook.Bids.RemoveOrderById(strconv.FormatUint(headOrder.OrderID, 10))
 			} else {
-				orderBook.asks.RemoveOrderById(strconv.FormatUint(headOrder.OrderID, 10))
+				orderBook.Asks.RemoveOrderById(strconv.FormatUint(headOrder.OrderID, 10))
 			}
 			quantityToTrade = Zero()
 
 		} else {
 			tradedQuantity = headOrder.Quantity
 			if side == Bid {
-				orderBook.bids.RemoveOrderById(strconv.FormatUint(headOrder.OrderID, 10))
+				orderBook.Bids.RemoveOrderById(strconv.FormatUint(headOrder.OrderID, 10))
 			} else {
-				orderBook.asks.RemoveOrderById(strconv.FormatUint(headOrder.OrderID, 10))
+				orderBook.Asks.RemoveOrderById(strconv.FormatUint(headOrder.OrderID, 10))
 			}
 		}
 
 		if verbose {
-			log.Debug("TRADE: ", "Time", orderBook.time, "Price", tradedPrice.String(), "Quantity", tradedQuantity.String(), "TradeID", headOrder.ExchangeAddress.Hex(), "Matching TradeID", quote.ExchangeAddress.Hex())
+			log.Debug("TRADE: ", "Time", orderBook.Time, "Price", tradedPrice.String(), "Quantity", tradedQuantity.String(), "TradeID", headOrder.ExchangeAddress.Hex(), "Matching TradeID", quote.ExchangeAddress.Hex())
 		}
 
 		transactionRecord := make(map[string]string)
-		transactionRecord["timestamp"] = strconv.FormatUint(orderBook.time, 10)
+		transactionRecord["timestamp"] = strconv.FormatUint(orderBook.Time, 10)
 		transactionRecord["price"] = tradedPrice.String()
 		transactionRecord["quantity"] = tradedQuantity.String()
-		transactionRecord["time"] = strconv.FormatUint(orderBook.time, 10)
+		transactionRecord["time"] = strconv.FormatUint(orderBook.Time, 10)
 
 		trades = append(trades, transactionRecord)
 	}
@@ -227,12 +227,12 @@ func (orderBook *OrderBook) CancelOrder(order *Order) {
 	orderId := order.OrderID
 
 	if order.Side == Bid {
-		if orderBook.bids.OrderExist(strconv.FormatUint(orderId, 10)) {
-			orderBook.bids.RemoveOrderById(strconv.FormatUint(orderId, 10))
+		if orderBook.Bids.OrderExist(strconv.FormatUint(orderId, 10)) {
+			orderBook.Bids.RemoveOrderById(strconv.FormatUint(orderId, 10))
 		}
 	} else {
-		if orderBook.asks.OrderExist(strconv.FormatUint(orderId, 10)) {
-			orderBook.asks.RemoveOrderById(strconv.FormatUint(orderId, 10))
+		if orderBook.Asks.OrderExist(strconv.FormatUint(orderId, 10)) {
+			orderBook.Asks.RemoveOrderById(strconv.FormatUint(orderId, 10))
 		}
 	}
 }
@@ -242,15 +242,15 @@ func (orderBook *OrderBook) ModifyOrder(quoteUpdate *Order, orderId uint64) {
 
 	side := quoteUpdate.Side
 	quoteUpdate.OrderID = orderId
-	quoteUpdate.UpdatedAt = orderBook.time
+	quoteUpdate.UpdatedAt = orderBook.Time
 
 	if side == Bid {
-		if orderBook.bids.OrderExist(strconv.FormatUint(orderId, 10)) {
-			orderBook.bids.UpdateOrder(quoteUpdate)
+		if orderBook.Bids.OrderExist(strconv.FormatUint(orderId, 10)) {
+			orderBook.Bids.UpdateOrder(quoteUpdate)
 		}
 	} else {
-		if orderBook.asks.OrderExist(strconv.FormatUint(orderId, 10)) {
-			orderBook.asks.UpdateOrder(quoteUpdate)
+		if orderBook.Asks.OrderExist(strconv.FormatUint(orderId, 10)) {
+			orderBook.Asks.UpdateOrder(quoteUpdate)
 		}
 	}
 }
@@ -258,16 +258,16 @@ func (orderBook *OrderBook) ModifyOrder(quoteUpdate *Order, orderId uint64) {
 func (orderBook *OrderBook) VolumeAtPrice(side string, price *big.Int) *big.Int {
 	if side == Bid {
 		volume := Zero()
-		if orderBook.bids.PriceExist(price) {
-			volume = orderBook.bids.PriceList(price).volume
+		if orderBook.Bids.PriceExist(price) {
+			volume = orderBook.Bids.PriceList(price).Volume
 		}
 
 		return volume
 
 	} else {
 		volume := Zero()
-		if orderBook.asks.PriceExist(price) {
-			volume = orderBook.asks.PriceList(price).volume
+		if orderBook.Asks.PriceExist(price) {
+			volume = orderBook.Asks.PriceList(price).Volume
 		}
 		return volume
 	}
@@ -279,11 +279,11 @@ func (orderBook *OrderBook) VolumeAtPrice(side string, price *big.Int) *big.Int 
 //}
 
 func (orderBook *OrderBook) Save() error {
-	err := orderBook.asks.Save()
+	err := orderBook.Asks.Save()
 	if err != nil {
 		return err
 	}
-	err = orderBook.bids.Save()
+	err = orderBook.Bids.Save()
 	if err != nil {
 		return err
 	}
@@ -293,12 +293,12 @@ func (orderBook *OrderBook) Save() error {
 		log.Error("Can't save orderbook", "value", value, "err", err)
 		return err
 	}
-	log.Debug("Save orderbook ", "key", orderBook.key, "value", value, "orderbook", orderBook)
-	return orderBook.db.Put(orderBook.key, value)
+	log.Debug("Save orderbook ", "key", orderBook.Key, "value", value, "orderbook", orderBook)
+	return orderBook.Db.Put(orderBook.Key, value)
 }
 
 func (orderBook *OrderBook) Restore() (*OrderBook, error) {
-	val, err := orderBook.db.Get(orderBook.key, &OrderBook{})
+	val, err := orderBook.Db.Get(orderBook.Key, &OrderBook{})
 	if err != nil {
 		log.Error("Can't restore orderbook", "err", err)
 		return nil, err
@@ -317,23 +317,23 @@ func (orderBook *OrderBook) SaveOrderPending(order *Order) error {
 	zero := Zero()
 	orderBook.UpdateTime()
 	// if we do not use auto-increment orderid, we must set price slot to avoid conflict
-	orderBook.nextOrderID++
+	orderBook.NextOrderID++
 
 	if order.Side == Bid {
 		if order.Quantity.Cmp(zero) > 0 {
-			order.OrderID = orderBook.nextOrderID
-			if orderBook.bids == nil {
+			order.OrderID = orderBook.NextOrderID
+			if orderBook.Bids == nil {
 				log.Error("orderbook bids is corrupted")
 			}
-			orderBook.bids.InsertOrder(order)
+			orderBook.Bids.InsertOrder(order)
 		}
 	} else {
 		if order.Quantity.Cmp(zero) > 0 {
-			order.OrderID = orderBook.nextOrderID
-			if orderBook.asks == nil {
+			order.OrderID = orderBook.NextOrderID
+			if orderBook.Asks == nil {
 				log.Error("orderbook asks is corrupted")
 			}
-			orderBook.asks.InsertOrder(order)
+			orderBook.Asks.InsertOrder(order)
 		}
 	}
 

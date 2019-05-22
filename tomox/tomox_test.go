@@ -45,6 +45,14 @@ func buildOrder() *Order {
 	return order
 }
 
+func buildOrderBook() *OrderBook{
+	pairName := "abc"
+	db := NewLDBEngine(&Config{DataDir: "/Users/tuna/workspace/gocode/tomo/src/github.com/ethereum/go-ethereum/dbtest"})
+	ob := NewOrderBook(pairName, db)
+	fmt.Println("orderbook: ", ob)
+	return ob
+}
+
 func TestCreateOrder(t *testing.T) {
 	order := buildOrder()
 	topic := order.BaseToken.Hex() + "::" + order.QuoteToken.Hex()
@@ -114,4 +122,18 @@ func TestCancelOrder(t *testing.T) {
 	if err != nil {
 		t.Error("rpcClient.Call tomoX_createOrder failed", "err", err)
 	}
+}
+
+func TestEncodeDecode(t *testing.T) {
+	orderbook := buildOrderBook()
+	value, err := EncodeBytesItem(orderbook)
+	if err != nil {
+		t.Error("Can't save orderbook", "value", value, "err", err)
+	}
+	fmt.Println("value", value)
+	out, err := DecodeBytesItem(value, &OrderBook{})
+	if err != nil {
+		t.Error("Can't restore orderbook", "value", value, "err", err)
+	}
+	fmt.Println("output", out)
 }

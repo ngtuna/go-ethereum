@@ -421,7 +421,7 @@ func (tomox *TomoX) postEvent(envelope *Envelope, isP2P bool) error {
 	order := &Order{}
 	msg := envelope.Open()
 	err := json.Unmarshal(msg.Payload, &order)
-	order.db = tomox.db
+	order.Db = tomox.db
 	if err != nil {
 		log.Error("Fail to parse envelope", "err", err)
 		return err
@@ -597,8 +597,8 @@ func (tomox *TomoX) getAndCreateIfNotExisted(pairName string) (*OrderBook, error
 		key := crypto.Keccak256([]byte(strings.ToLower(pairName)))
 		// restore orderbook from DB
 		ob := &OrderBook{
-			key: key,
-			db: tomox.db,
+			Key: key,
+			Db: tomox.db,
 		}
 		ob, err := ob.Restore()
 		if err != nil {
@@ -665,7 +665,7 @@ func (tomox *TomoX) GetBidsTree(pairName string) (*OrderTree, error) {
 	if err != nil {
 		return nil, err
 	}
-	return ob.bids, nil
+	return ob.Bids, nil
 }
 
 func (tomox *TomoX) GetAsksTree(pairName string) (*OrderTree, error) {
@@ -673,5 +673,5 @@ func (tomox *TomoX) GetAsksTree(pairName string) (*OrderTree, error) {
 	if err != nil {
 		return nil, err
 	}
-	return ob.asks, nil
+	return ob.Asks, nil
 }

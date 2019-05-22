@@ -9,54 +9,54 @@ import (
 )
 
 type OrderList struct {
-	headOrder *Order
-	tailOrder *Order
-	length    int
-	volume    *big.Int
-	lastOrder *Order
-	price     *big.Int
+	HOrder *Order
+	TOrder *Order
+	Len    int
+	Volume    *big.Int
+	LastOrder *Order
+	Price     *big.Int
 	Key       []byte
-	slot      *big.Int
-	db        TomoXDao
+	Slot      *big.Int
+	Db        TomoXDao
 }
 
-func NewOrderList(price *big.Int, db TomoXDao) *OrderList {
-	return &OrderList{headOrder: nil, tailOrder: nil, length: 0, volume: Zero(),
-		lastOrder: nil, price: price, db: db}
+func NewOrderList(Price *big.Int, db TomoXDao) *OrderList {
+	return &OrderList{HOrder: nil, TOrder: nil, Len: 0, Volume: Zero(),
+		LastOrder: nil, Price: Price, Db: db}
 }
 
 func (orderlist *OrderList) Less(than rbtree.Item) bool {
-	return orderlist.price.Cmp(than.(*OrderList).price) < 0
+	return orderlist.Price.Cmp(than.(*OrderList).Price) < 0
 }
 
 func (orderlist *OrderList) Length() int {
-	return orderlist.length
+	return orderlist.Len
 }
 
 func (orderlist *OrderList) HeadOrder() *Order {
-	return orderlist.headOrder
+	return orderlist.HOrder
 }
 
 func (orderlist *OrderList) AppendOrder(order *Order) {
 	if orderlist.Length() == 0 {
 		order.NextOrder = nil
 		order.PrevOrder = nil
-		orderlist.headOrder = order
-		orderlist.tailOrder = order
+		orderlist.HOrder = order
+		orderlist.TOrder = order
 	} else {
-		order.PrevOrder = orderlist.tailOrder
+		order.PrevOrder = orderlist.TOrder
 		order.NextOrder = nil
-		orderlist.tailOrder.NextOrder = order
-		orderlist.tailOrder = order
+		orderlist.TOrder.NextOrder = order
+		orderlist.TOrder = order
 	}
-	orderlist.length = orderlist.length + 1
-	orderlist.volume = Add(orderlist.volume, order.Quantity)
+	orderlist.Len = orderlist.Len + 1
+	orderlist.Volume = Add(orderlist.Volume, order.Quantity)
 }
 
 func (orderlist *OrderList) RemoveOrder(order *Order) {
-	orderlist.volume = Sub(orderlist.volume, order.Quantity)
-	orderlist.length = orderlist.length - 1
-	if orderlist.length == 0 {
+	orderlist.Volume = Sub(orderlist.Volume, order.Quantity)
+	orderlist.Len = orderlist.Len - 1
+	if orderlist.Len == 0 {
 		return
 	}
 
@@ -68,10 +68,10 @@ func (orderlist *OrderList) RemoveOrder(order *Order) {
 		prevOrder.NextOrder = nextOrder
 	} else if nextOrder != nil {
 		nextOrder.PrevOrder = nil
-		orderlist.headOrder = nextOrder
+		orderlist.HOrder = nextOrder
 	} else if prevOrder != nil {
 		prevOrder.NextOrder = nil
-		orderlist.tailOrder = prevOrder
+		orderlist.TOrder = prevOrder
 	}
 }
 
@@ -79,13 +79,13 @@ func (orderlist *OrderList) MoveToTail(order *Order) {
 	if order.PrevOrder != nil { // This Order is not the first Order in the OrderList
 		order.PrevOrder.NextOrder = order.NextOrder // Link the previous Order to the next Order, then move the Order to tail
 	} else { // This Order is the first Order in the OrderList
-		orderlist.headOrder = order.NextOrder // Make next order the first
+		orderlist.HOrder = order.NextOrder // Make next order the first
 	}
 	order.NextOrder.PrevOrder = order.PrevOrder
 
 	// Move Order to the last position. Link up the previous last position Order.
-	orderlist.tailOrder.NextOrder = order
-	orderlist.tailOrder = order
+	orderlist.TOrder.NextOrder = order
+	orderlist.TOrder = order
 }
 
 func (orderList *OrderList) SaveOrder(order *Order) error {
@@ -96,7 +96,7 @@ func (orderList *OrderList) SaveOrder(order *Order) error {
 		return err
 	}
 	log.Debug("Save order ", "key", key, "value", value, "order", order)
-	return orderList.db.Put(key, value)
+	return orderList.Db.Put(key, value)
 }
 
 // GetOrderID return the real slot key of order in this linked list
@@ -109,7 +109,7 @@ func (orderList *OrderList) GetOrderID(order *Order) []byte {
 // currently we use auto increase ment id so no need slot
 func (orderList *OrderList) GetOrderIDFromKey(key []byte) []byte {
 	orderSlot := new(big.Int).SetBytes(key)
-	return common.BigToHash(Add(orderList.slot, orderSlot)).Bytes()
+	return common.BigToHash(Add(orderList.Slot, orderSlot)).Bytes()
 }
 
 func (orderList *OrderList) Save() error {
@@ -119,5 +119,5 @@ func (orderList *OrderList) Save() error {
 		return err
 	}
 	log.Debug("Save orderlist ", "key", orderList.Key, "value", value, "orderList", orderList)
-	return orderList.db.Put(orderList.Key, value)
+	return orderList.Db.Put(orderList.Key, value)
 }

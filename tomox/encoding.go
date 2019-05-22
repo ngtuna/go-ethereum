@@ -3,7 +3,6 @@ package tomox
 import (
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/pkg/errors"
-	"github.com/ethereum/go-ethereum/log"
 )
 
 func EncodeBytesItem(val interface{}) ([]byte, error) {
@@ -47,13 +46,12 @@ func DecodeBytesItem(bytes []byte, val interface{}) (interface{}, error) {
 		}
 		return out, nil
 	case *OrderBook:
-		out := &OrderBook{}
-		err := rlp.DecodeBytes(bytes, out)
+		var out OrderBook
+		err := rlp.DecodeBytes(bytes, &out)
 		if err != nil {
 			return nil, err
 		}
-		log.Debug("decode debug", "out", out)
-		return out, nil
+		return &out, nil
 	default:
 		return nil, errors.New("type is not supported")
 	}
