@@ -25,11 +25,12 @@ func decimalComparator(a, b interface{}) int {
 
 type OrderTree struct {
 	PriceTree *redblacktreeextended.RedBlackTreeExtended
+	PriceTreeByte []byte
 	PriceMap  map[string]*OrderList // Dictionary containing price : OrderList object
 	OrderMap  map[string]*Order     // Dictionary containing orderId : Order object
 	Volume    *big.Int              // Contains total quantity from all Orders in tree
-	NumOrders int                   // Contains count of Orders in tree
-	Depth     int                   // Number of different prices in tree (http://en.wikipedia.org/wiki/Order_book_(trading)#Book_Depth)
+	NumOrders uint64                // Contains count of Orders in tree
+	Depth     uint64                // Number of different prices in tree (http://en.wikipedia.org/wiki/Order_book_(trading)#Book_Depth)
 	Slot      *big.Int
 	Key       []byte
 	Db        TomoXDao

@@ -22,29 +22,29 @@ type SignatureRecord struct {
 
 // Order: info that will be store in database
 type Order struct {
-	Quantity        *big.Int       `json:"quantity,omitempty"`
-	Price           *big.Int       `json:"price,omitempty"`
-	ExchangeAddress common.Address `json:"exchangeAddress,omitempty"`
-	UserAddress     common.Address `json:"userAddress,omitempty"`
-	BaseToken       common.Address `json:"baseToken,omitempty"`
-	QuoteToken      common.Address `json:"quoteToken,omitempty"`
-	Status          string         `json:"status,omitempty"`
-	Side            string         `json:"side,omitempty"`
-	Type            string         `json:"type,omitempty"`
-	Hash            common.Hash    `json:"hash,omitempty"`
-	Signature       *Signature     `json:"signature,omitempty"`
-	FilledAmount    *big.Int       `json:"filledAmount,omitempty"`
-	Nonce           *big.Int       `json:"nonce,omitempty"`
-	MakeFee         *big.Int       `json:"makeFee,omitempty"`
-	TakeFee         *big.Int       `json:"takeFee,omitempty"`
-	PairName        string         `json:"pairName,omitempty"`
-	CreatedAt       uint64         `json:"createdAt,omitempty"`
-	UpdatedAt       uint64         `json:"updatedAt,omitempty"`
-	OrderID         uint64         `json:"orderID,omitempty"`
+	Quantity        *big.Int
+	Price           *big.Int
+	ExchangeAddress common.Address
+	UserAddress     common.Address
+	BaseToken       common.Address
+	QuoteToken      common.Address
+	Status          string
+	Side            string
+	Type            string
+	Hash            common.Hash
+	Signature       *Signature
+	FilledAmount    *big.Int
+	Nonce           *big.Int
+	MakeFee         *big.Int
+	TakeFee         *big.Int
+	PairName        string
+	CreatedAt       uint64
+	UpdatedAt       uint64
+	OrderID         uint64
 	// *OrderMeta
-	NextOrder *Order     `json:"-"`
-	PrevOrder *Order     `json:"-"`
-	OrderList *OrderList `json:"-"`
+	NextOrder *Order     `rlp:"nil"`
+	PrevOrder *Order     `rlp:"nil"`
+	OrderList *OrderList `rlp:"nil"`
 	Key       []byte
 	Db        TomoXDao
 }

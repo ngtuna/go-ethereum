@@ -9,11 +9,11 @@ import (
 )
 
 type OrderList struct {
-	HOrder *Order
-	TOrder *Order
-	Len    int
+	HOrder *Order `rlp:"nil"`
+	TOrder *Order `rlp:"nil"`
+	Len    uint64
 	Volume    *big.Int
-	LastOrder *Order
+	LastOrder *Order `rlp:"nil"`
 	Price     *big.Int
 	Key       []byte
 	Slot      *big.Int
@@ -29,7 +29,7 @@ func (orderlist *OrderList) Less(than rbtree.Item) bool {
 	return orderlist.Price.Cmp(than.(*OrderList).Price) < 0
 }
 
-func (orderlist *OrderList) Length() int {
+func (orderlist *OrderList) Length() uint64 {
 	return orderlist.Len
 }
 

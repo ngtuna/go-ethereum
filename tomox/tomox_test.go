@@ -6,10 +6,12 @@ import (
 	"fmt"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/ethereum/go-ethereum/crypto"
 	"math/big"
 	"math/rand"
 	"testing"
 	"time"
+	"strings"
 )
 
 func buildOrder() *Order {
@@ -17,6 +19,7 @@ func buildOrder() *Order {
 	price, _ := new(big.Int).SetString("250000000000000000000000000000000000000", 10)
 	v := []byte(string(rand.Intn(999)))
 	lstBuySell := []string{"BUY", "SELL"}
+	db := NewLDBEngine(&Config{DataDir: "/Users/tuna/workspace/gocode/tomo/src/github.com/ethereum/go-ethereum/dbtest"})
 	order := &Order{
 		Quantity:        new(big.Int).SetUint64(uint64(rand.Intn(100)) * 1000000000000000000),
 		Price:           price,
@@ -41,16 +44,9 @@ func buildOrder() *Order {
 		TakeFee:      new(big.Int).SetUint64(4000000000000000),
 		CreatedAt:    uint64(time.Now().Unix()),
 		UpdatedAt:    uint64(time.Now().Unix()),
+		Db: db,
 	}
 	return order
-}
-
-func buildOrderBook() *OrderBook{
-	pairName := "abc"
-	db := NewLDBEngine(&Config{DataDir: "/Users/tuna/workspace/gocode/tomo/src/github.com/ethereum/go-ethereum/dbtest"})
-	ob := NewOrderBook(pairName, db)
-	fmt.Println("orderbook: ", ob)
-	return ob
 }
 
 func TestCreateOrder(t *testing.T) {
@@ -124,16 +120,80 @@ func TestCancelOrder(t *testing.T) {
 	}
 }
 
+func buildOrderBook() *OrderBook {
+	pairName := "btc/tomo"
+	db := NewLDBEngine(&Config{DataDir: "/Users/tuna/workspace/gocode/tomo/src/github.com/ethereum/go-ethereum/dbtest"})
+	ob := NewOrderBook(pairName, db)
+	fmt.Println("orderbook: ", ob)
+	return ob
+}
+
+func buildOrderTree() *OrderTree {
+	pairName := "btc/tomo"
+	db := NewLDBEngine(&Config{DataDir: "/Users/tuna/workspace/gocode/tomo/src/github.com/ethereum/go-ethereum/dbtest"})
+	key := crypto.Keccak256([]byte(strings.ToLower(pairName)))
+	obkey := GetSegmentHash(key, 1, SlotSegment)
+	ob := NewOrderTree(obkey, db)
+	fmt.Println("ordertree: ", ob)
+	return ob
+}
+
+func buildOrderList() *OrderList {
+	db := NewLDBEngine(&Config{DataDir: "/Users/tuna/workspace/gocode/tomo/src/github.com/ethereum/go-ethereum/dbtest"})
+	price, _ := new(big.Int).SetString("250000000000000000000000000000000000000", 10)
+	ol := NewOrderList(price, db)
+	ol.HOrder = buildOrder()
+	return ol
+}
+
 func TestEncodeDecode(t *testing.T) {
-	orderbook := buildOrderBook()
-	value, err := EncodeBytesItem(orderbook)
+	//ordertree := buildOrderTree()
+	//value, err := EncodeBytesItem(ordertree)
+	//if err != nil {
+	//	t.Error("Can't save ordertree", "value", value, "err", err)
+	//}
+	//fmt.Println("value", value)
+	//out, err := DecodeBytesItem(value, &OrderTree{Db: ordertree.Db, PriceTree: ordertree.PriceTree})
+	//if err != nil {
+	//	t.Error("Can't restore ordertree", "value", value, "err", err)
+	//}
+	//fmt.Println("output", out)
+
+	//orderbook := buildOrderBook()
+	//value, err := EncodeBytesItem(orderbook)
+	//if err != nil {
+	//	t.Error("Can't save orderbook", "value", value, "err", err)
+	//}
+	//fmt.Println("value", value)
+	//out, err := DecodeBytesItem(value, &OrderBook{})
+	//if err != nil {
+	//	t.Error("Can't restore orderbook", "value", value, "err", err)
+	//}
+	//fmt.Println("output", out)
+
+	orderlist := buildOrderList()
+	fmt.Println("orderlist: ", orderlist)
+	value, err := EncodeBytesItem(orderlist)
 	if err != nil {
-		t.Error("Can't save orderbook", "value", value, "err", err)
+		t.Error("Can't save orderlist", "value", value, "err", err)
 	}
 	fmt.Println("value", value)
-	out, err := DecodeBytesItem(value, &OrderBook{})
+	out, err := DecodeBytesItem(value, &OrderList{Db: orderlist.Db})
 	if err != nil {
-		t.Error("Can't restore orderbook", "value", value, "err", err)
+		t.Error("Can't restore orderlist", "value", value, "err", err)
 	}
 	fmt.Println("output", out)
+
+	//order := buildOrder()
+	//fmt.Println("order", order)
+	//value, err = EncodeBytesItem(order)
+	//if err != nil {
+	//	t.Error("Can't save order", "value", value, "err", err)
+	//}
+	//fmt.Println("value", value)
+	//out, err = DecodeBytesItem(value, &Order{Db: order.Db})
+	//if err != nil {
+	//	t.Error("Can't restore order", "value", value, "err", err)
+	//}
+	//fmt.Println("output", out)
 }
