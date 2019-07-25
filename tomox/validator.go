@@ -211,6 +211,7 @@ func GetTokenBalance(statedb *state.StateDB, address common.Address, contractAdd
 
 // verify orderbook, orderTrees before running matching engine
 func (tx *TxDataMatch) VerifyOldTomoXState(ob *OrderBook) error {
+	log.Debug("M2 - item info", "obOld", ob.Item, "askOld", ob.Asks.Item, "bidOld", ob.Bids.Item)
 	// verify orderbook
 	if hash, err := ob.Hash(); err != nil || !bytes.Equal(hash.Bytes(), tx.ObOld.Bytes()) {
 		log.Error("wrong old orderbook", "expected", hex.EncodeToString(tx.ObOld.Bytes()), "actual", hex.EncodeToString(hash.Bytes()), "err", err)
@@ -235,6 +236,7 @@ func (tx *TxDataMatch) VerifyOldTomoXState(ob *OrderBook) error {
 
 // verify orderbook, orderTrees after running matching engine
 func (tx *TxDataMatch) VerifyNewTomoXState(ob *OrderBook) error {
+	log.Debug("M2 - item info", "obNew", ob.Item, "askNew", ob.Asks.Item, "bidNew", ob.Bids.Item)
 	// verify orderbook
 	if hash, err := ob.Hash(); err != nil || !bytes.Equal(hash.Bytes(), tx.ObNew.Bytes()) {
 		log.Error("wrong new orderbook", "expected", hex.EncodeToString(tx.ObNew.Bytes()), "actual", hex.EncodeToString(hash.Bytes()), "err", err)

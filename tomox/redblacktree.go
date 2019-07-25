@@ -10,6 +10,7 @@ import (
 	"fmt"
 
 	"github.com/ethereum/go-ethereum/log"
+	"encoding/hex"
 )
 
 // Tree holds elements of the red-black tree
@@ -64,6 +65,7 @@ func (tree *Tree) Put(key []byte, value []byte, dryrun bool) error {
 	} else {
 		node := tree.Root(dryrun)
 		if node == nil {
+			log.Error("tree.Root() is nil", "key", hex.EncodeToString(tree.rootKey), "dryrun mode", dryrun)
 			return fmt.Errorf("Error on inserting node into the tree. tree.Root() is nil")
 		}
 		loop := true

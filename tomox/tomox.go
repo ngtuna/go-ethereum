@@ -812,21 +812,25 @@ func (tomox *TomoX) ProcessOrderPending() map[common.Hash]TxDataMatch {
 						}
 
 						log.Info("Process order pending", "orderPending", order)
+
 						obOld, err := ob.Hash()
 						if err != nil {
 							log.Error("Fail to get orderbook hash old", "err", err)
 							continue
 						}
+
 						askOld, err := ob.Asks.Hash()
 						if err != nil {
 							log.Error("Fail to get ask tree hash old", "err", err)
 							continue
 						}
+
 						bidOld, err := ob.Bids.Hash()
 						if err != nil {
 							log.Error("Fail to get bid tree hash old", "err", err)
 							continue
 						}
+						log.Debug("M1 - item info", "obOld", ob.Item, "askOld", ob.Asks.Item, "bidOld", ob.Bids.Item)
 						value, err := EncodeBytesItem(order)
 						if err != nil {
 							log.Error("Can't encode", "order", order, "err", err)
@@ -853,7 +857,7 @@ func (tomox *TomoX) ProcessOrderPending() map[common.Hash]TxDataMatch {
 							continue
 						}
 
-						log.Info("Process OrderPending completed", "obNew", hex.EncodeToString(obNew.Bytes()), "bidNew", hex.EncodeToString(bidNew.Bytes()), "askNew", hex.EncodeToString(askNew.Bytes()))
+						log.Debug("Process OrderPending completed", "obNew", hex.EncodeToString(obNew.Bytes()), "bidNew", hex.EncodeToString(bidNew.Bytes()), "askNew", hex.EncodeToString(askNew.Bytes()))
 						txMatches[order.Hash] = TxDataMatch{
 							Order:  value,
 							Trades: trades,
@@ -864,6 +868,7 @@ func (tomox *TomoX) ProcessOrderPending() map[common.Hash]TxDataMatch {
 							BidOld: bidOld,
 							BidNew: bidNew,
 						}
+						log.Debug("M1 - item info", "obNew", ob.Item, "askNew", ob.Asks.Item, "bidNew", ob.Bids.Item)
 					}
 				} else {
 					log.Error("Fail to get order pending from db", "hash", orderHash)
